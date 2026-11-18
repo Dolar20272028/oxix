@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>GENESIS EXCHANGE</title>
+    <style>
+        body { background: #0a0a0a; color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: #111; padding: 30px; border-radius: 15px; border: 1px solid #333; text-align: center; width: 350px; }
+        img { width: 100px; margin-bottom: 20px; }
+        input, select { width: 100%; padding: 10px; margin: 10px 0; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #f2a900; border: none; color: #000; font-weight: bold; cursor: pointer; border-radius: 5px; }
+        #result { margin-top: 20px; padding: 10px; background: #1a1a1a; border-radius: 5px; display: none; font-size: 14px; text-align: left; border-left: 4px solid #f2a900; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <img src="assets/cryptopix_genesis_hero.png" alt="Logo">
+        <h2>GENESIS EXCHANGE</h2>
+        <input type="number" id="amount" placeholder="Valor em BRL">
+        <select id="currency">
+            <option value="BTC">Bitcoin (BTC)</option>
+            <option value="ETH">Ethereum (ETH)</option>
+            <option value="SOL">Solana (SOL)</option>
+        </select>
+        <button onclick="simular()">SIMULAR OPERAÇÃO</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        async function simular() {
+            const amount = document.getElementById('amount').value;
+            const currency = document.getElementById('currency').value;
+            const resDiv = document.getElementById('result');
+
+            if(!amount) { alert("Digite o valor!"); return; }
+
+            try {
+                const response = await fetch('http://127.0.0.1:8080/simulate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: parseFloat(amount), currency: currency })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || "Erro no servidor");
+                }
+
+                resDiv.style.display = 'block';
+                resDiv.innerHTML = `<strong>ID:</strong> ${data.transaction_id}<br>
+                                    <strong>Valor:</strong> R$ ${data.amount_brl}<br>
+                                    <strong>Recebe:</strong> ${data.converted_amount} ${data.currency}`;
+            } catch (err) {
+                resDiv.style.display = 'block';
+                resDiv.innerHTML = `<span style="color: #ff4444">Erro: ${err.message}</span>`;
+            }
+        }
+    </script>
+</body>
+</html>
