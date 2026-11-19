@@ -1,11 +1,12 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-import uuid
+from database import init_db
+from state_machine import initialize_state_schema
+from admin import router as admin_router
 
 app = FastAPI()
 
-# Libera o acesso para o frontend
+# Permite que o seu frontend no GitHub Pages acesse a API
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -13,29 +14,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class OperationCreate(BaseModel):
-    amount: float = Field(..., gt=0, lt=1000001)
-    currency: str
+# Rota de teste para saber se está Live
+@app.get("/check_status")
+async def check_status():
+    return {"status": "online", "message": "API CryptoPix Genesis está operacional"}
+
+# Inclui as rotas do admin
+app.include_router(admin_router)
+
+@app.on_event("startup")
+async def startup_event():
+    initialize_state_schema()
 
 @app.get("/")
 async def root():
-    return {"status": "CryptoPix API Online"}
-
-@app.post("/simulate")
-async def simulate_operation(op: OperationCreate):
-    # Simulação de cotação (Ex: 1 USD = 5.50 BRL)
-    quote = 5.50 
-    result = op.amount / quote
-    transaction_id = f"CPX-{uuid.uuid4().hex[:8].upper()}"
-    
-    return {
-        "transaction_id": transaction_id,
-        "amount_brl": op.amount,
-        "converted_amount": round(result, 8),
-        "currency": op.currency,
-        "status": "success"
-    }
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8080)
+    return {"message": "Bem-vindo à API CryptoPix. Use /check_status para testar."}
