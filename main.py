@@ -20,7 +20,7 @@ app.add_middleware(
 # Agora usamos Spread (Lucro) em vez de taxa fixa descontada
 SPREAD_PERCENT = 3.5 
 WALLET_ADDRESS = "TMN2ShY4KSex1gtc68AL9LziXr8i4RdFYM"
-MASTER_API_KEY = "GENESIS_AI_SECRET_2026"
+MASTER_API_KEY = "genesis_ai_secret_2026"
 
 transaction_ledger = {}
 
@@ -49,7 +49,7 @@ async def get_real_usdt_rate():
 async def root():
     return {"protocol": "CryptoPix Genesis", "status": "Operational"}
 
-@app.get("/simulate")
+@app.post("/simulate")
 async def simulate(amount: float, asset: str):
     if amount <= 0:
         raise HTTPException(status_code=400, detail="Amount must be positive")
