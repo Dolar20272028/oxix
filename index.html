@@ -22,11 +22,13 @@
 </head>
 <body>
 
+    <!-- BANNER DE IMPACTO -->
     <div class="w-full relative">
         <img src="banner.jpg" alt="CryptoPix Genesis Banner" class="hero-image">
         <div class="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-[#05070a] to-transparent"></div>
     </div>
 
+    <!-- CONTEÚDO OPERACIONAL -->
     <main class="flex flex-col items-center justify-center p-6 -mt-10 relative z-10">
         <div class="glass-card p-8 w-full max-w-md relative overflow-hidden">
             <div class="text-center mb-8">
@@ -83,7 +85,7 @@
                 <p class="text-xs text-gray-400">Transfira o valor exato para a carteira abaixo</p>
             </div>
             <div class="bg-black/40 p-4 rounded-2xl border border-yellow-500/20 mb-6">
-                <p class="text-[10px] text-gray-500 uppercase font-bold mb-2 text-left">Endereço USDT (TRC20)</p>
+                <p class="text-[10px] text-gray_text-left">Endereço USDT (TRC20)</p>
                 <div class="flex items-center justify-between gap-2">
                     <span id="walletAddress" class="text-xs font-mono break-all text-yellow-500">Carregando...</span>
                     <button onclick="copyWallet()" class="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-all">
@@ -117,9 +119,12 @@
                 const response = await fetch(`${API_URL}/simulate?amount=${amount}&asset=${asset}`);
                 if (!response.ok) throw new Error();
                 const data = await response.json();
+                
+                const quote = data.quote || data; 
+                
                 resultDiv.classList.remove('hidden');
-                quoteVal.innerText = `R$ ${data.final_amount.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-                feeInfo.innerText = `Taxa aplicada: ${data.fee_percent}% (${data.fee_amount} USDT)`;
+                quoteVal.innerText = `R$ ${quote.final_amount.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+                feeInfo.innerText = `Taxa aplicada: ${quote.fee_percent}% (${quote.fee_amount} USDT)`;
             } catch (error) { alert('Erro de conexão. Tente novamente.'); }
         }
 
