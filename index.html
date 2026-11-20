@@ -15,48 +15,13 @@
             --bg-deep: #02040a;
             --bg-card: rgba(10, 15, 30, 0.85);
         }
-
-        body { 
-            background-color: var(--bg-deep); 
-            color: #e2e8f0; 
-            font-family: 'Inter', sans-serif; 
-            margin: 0; 
-            overflow-x: hidden; 
+        body { background-color: var(--bg-deep); color: #e2e8f0; font-family: 'Inter', sans-serif; margin: 0; overflow-x: hidden; }
+        .gold-gradient { background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-light) 50%, var(--gold-dark) 100%); }
+        .gold-text { background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-light) 50%, var(--gold-dark) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .glass-card { background: var(--bg-card); backdrop-filter: blur(20px); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 32px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5); }
+        .input-field { background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(212, 175, 55, 0.2); color: white; transition: all 0.3s ease; font-family: 'JetBrains Mono', monospace; }
+        .input-field:focus { border-color: var(--gold-primary); outline: none; box-shadow: 0 0 15px rgba(212, 175, 55<channel|>, background: rgba(30, 41, 59, 0.6);
         }
-
-        .gold-gradient { 
-            background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-light) 50%, var(--gold-dark) 100%); 
-        }
-
-        .gold-text { 
-            background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-light) 50%, var(--gold-dark) 100%); 
-            -webkit-background-clip: text; 
-            -webkit-text-fill-color: transparent; 
-        }
-
-        .glass-card { 
-            background: var(--bg-card); 
-            backdrop-filter: blur(20px); 
-            border: 1px solid rgba(212, 175, 55, 0.3); 
-            border-radius: 32px; 
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-        }
-
-        .input-field { 
-            background: rgba(30, 41, 59, 0.4); 
-            border: 1px solid rgba(212, 175, 55, 0.2); 
-            color: white; 
-            transition: all 0.3s ease; 
-            font-family: 'JetBrains Mono', monospace; 
-        }
-
-        .input-field:focus { 
-            border-color: var(--gold-primary); 
-            outline: none; 
-            box-shadow: 0 0 15px rgba(212, 175, 55, 0.3); 
-            background: rgba(30, 41, 59, 0.6);
-        }
-
         .btn-primary { 
             background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%); 
             color: #000; 
@@ -65,13 +30,11 @@
             transition: all 0.3s; 
             box-shadow: 0 4px 15px rgba(234, 179, 8, 0.4); 
         }
-
         .btn-primary:hover { 
             transform: translateY(-3px); 
             filter: brightness(1.1); 
             box-shadow: 0 8px 20px rgba(234, 179, 8, 0.6);
         }
-
         #paymentModal { 
             display: none; 
             position: fixed; 
@@ -82,27 +45,27 @@
             align-items: center; 
             justify-content: center; 
         }
-
         .hero-container {
             position: relative;
             width: 100%;
-            height: 60vh;
+            height: 50vh;
             overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-
         .hero-image { 
             width: 100%; 
             height: 100%; 
-            object-fit: cover; 
+            object-fit: contain; 
             filter: brightness(0.8);
         }
-
         .hero-overlay {
             position: absolute;
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 40%;
+            height: 30%;
             background: linear-gradient(to top, var(--bg-deep), transparent);
         }
     </style>
@@ -116,10 +79,9 @@
     </div>
 
     <!-- CONTEÚDO OPERACIONAL -->
-    <main class="flex flex-col items-center justify-center p-6 -mt-32 relative z-10">
+    <main class="flex flex-col items-center justify-center p-6 -mt-20 relative z-10 max-w-6xl mx-auto">
         <div class="glass-card p-8 w-full max-w-md relative overflow-hidden">
             
-            <!-- Detalhe Decorativo Superior -->
             <div class="absolute top-0 left-0 w-full h-1 gold-gradient"></div>
 
             <div class="text-center mb-8">
@@ -136,199 +98,128 @@
                 <div class="group">
                     <label class="block text-[10px] uppercase tracking-wider text-gray-400 mb-2 ml-1 group-focus-within:text-yellow-500 transition-colors">Ativo de Origem</label>
                     <select id="asset" class="input-field w-full p-4 rounded-2xl text-lg appearance-none cursor-pointer">
-                        <option value="USDT">Tether (USDT - TRC20)</option```html
-<option value="BTC">Bitcoin (BTC)</option>
-<option value="ETH">Ethereum (ETH)</option>
-</select>
-</div>
+                        <option value="USDT">Tether (USDT - TRC20)</option>
+                        <option value="BTC">Bitcoin (BTC)</option>
+                        <option value="ETH">Ethereum (ETH)</option>
+                    </select>
+                </div>
 
-<button onclick="simulate()" id="btnSimulate" class="btn-primary w-full p-4 rounded-2xl text-sm tracking-widest">
-Simular Operação
-</button>
-</div>
+                <button onclick="simulate()" id="btnSimulate" class="btn-primary w-full p-4 rounded-2xl text-sm tracking-widest">
+                    Simular Operação
+                </button>
+            </div>
 
-<!-- Resultado da Simulação -->
-<div id="result" class="hidden mt-8 p-6 rounded-3xl bg-yellow-500/5 border border-yellow-500/20 text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
-<p class="text-gray-400 text-xs uppercase mb-1">Cotação Final Estimada</p>
-<div id="quote-value" class="text-5xl font-bold gold-text mb-2">R$ 0,00</div>
-<p id="fee-info" class="text-[10px] text-gray-500 mb-6"></p>
+            <!-- Resultado da Simulação -->
+            <div id="result" class="hidden mt-8 p-6 rounded-3xl bg-yellow-500/5 border border-yellow-500/20 text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <p class="text-gray-400 text-xs uppercase mb-1">Cotação Final Estimada</p>
+                <div id="quote-value" class="text-5xl font-bold gold-text mb-2">R$ 0,00</div>
+                <p id="fee-info" class="text-[10px] text-gray-500 mb-6"></p>
 
-<div class="mb-6 text-left">
-<label class="block text-[10px] uppercase tracking-wider text-gray-400 mb-2 ml-1">Chave PIX para Recebimento</label>
-<input type="text" id="pix_key" placeholder="CPF, Email ou Telefone" class="input-field w-full p-4 rounded-2xl text-sm">
-</div>
+                <div class="mb-6 text-left">
+                    <label class="block text-[10px] uppercase tracking-wider text-gray-400 mb-2 ml-1">Chave PIX para Recebimento</label>
+                    <input type="text" id="pix_key" placeholder="CPF, Email ou Telefone" class="input-field w-full p-4 rounded-2xl text-sm">
+                </div>
 
-<button onclick="startTransaction()" class="btn-primary w-full p-4 rounded-2xl text-sm tracking-widest">
-Iniciar Troca Agora
-</button>
-</div>
-</div>
+                <button onclick="startTransaction()" class="btn-primary w-full p-4 rounded-2xl text-sm tracking-widest">
+                    Iniciar Troca Agora
+                </button>
+            </div>
+        </div>
 
-<!-- Footer Sutil -->
-<footer class="mt-12 mb-8 text-center">
-<p class="text-gray-600 text-[10px] uppercase tracking-widest">© 2026 CryptoPix Genesis Protocol • Secure & Anonymous</p>
-</footer>
-</main>
+        <footer class="mt-12 mb-8 text-center">
+            <p class="text-gray-600 text-[10px] uppercase tracking-widest">© 2026 CryptoPix Genesis Protocol • Secure & Anonymous</p>
+        </footer>
+    </main>
 
-<!-- Modal de Pagamento -->
-<div id="paymentModal" class="p-6">
-<div class="glass-card w-full max-w-sm p-8 text-center relative border-yellow-500/50">
-<button onclick="closeModal()" class="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors">
-<i data-lucide="x" class="w-6 h-6"></i>
-</button>
-<div class="mb-6">
-<h2 class="text-2xl font-bold text-white mb-1">Confirmar Depósito</h2>
-<p class="text-xs text-gray-400">Transfira o valor exato para a carteira abaixo</p>
-</div>
-<div class="bg-black/60 p-4 rounded-2xl border border-yellow-500/20 mb-6">
-<p class="text-[10px] text-gray-400 text-left mb-2 uppercase tracking-wider">Endereço USDT (TRC20)</p>
-<div class="flex items-center justify-between gap-2">
-<span id="walletAddress" class="text-xs font-mono break-all text-yellow-500">Carregando...</span>
-<button onclick="copyWallet()" class="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-all">
-<i data-lucide="copy" class="w-4 h-4 text-white"></i>
-</button>
-</div>
-</div>
-<div class="bg-white p-3 rounded-2xl w-48 h-48 mx-auto mb-6 flex items-center justify-center shadow-[0_0_30px_rgba(234,179,8,0.2)]">
-<img id="qrCode" src="" alt="QR Code" class="w-full h-full hidden">
-<div id="qrLoading" class="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500"></div>
-</div>
-<button onclick="confirmPayment()" class="btn-primary w-full py-4 rounded-2xl text-sm tracking-widest">
-Já realizei o envio
-</button>
-</div>
-</div>
+    <!-- Modal de Pagamento -->
+    <div id="paymentModal" class="p-6">
+        <div class="glass-card w-full max-w-sm p-8 text-center relative border-yellow-500/50">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-white mb-1">Confirmar Depósito</h2>
+                <p class="text-xs text-gray-400">Transfira o valor exato para a carteira abaixo</p>
+            </div>
+            <div class="bg-black/60 p-4 rounded-2xl border border-yellow-500/20 mb-6">
+                <p class="text-[10px] text-gray-400 text-left mb-2 uppercase tracking-wider">Endereço USDT (TRC20)</p>
+                <div class="flex items-center justify-between gap-2">
+                    <span id="walletAddress" class="text-xs font-mono break-all text-yellow-500">Carregando...</span>
+                    <button onclick="copyWallet()" class="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-all">
+                        <i data-lucide="copy" class="w-4 h-4 text-white"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="bg-white p-3 rounded-2xl w-48 h-48 mx-auto mb-6 flex items-center justify-center shadow-[0_0_30px_rgba(234,179,8,0.2)]">
+                <img id="qrCode" src="" alt="QR Code" class="w-full h-full hidden">
+                <div id="qrLoading" class="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500"></div>
+            </div>
+            <button onclick="confirmPayment()" class="btn-primary w-full py-4 rounded-2xl text-sm tracking-widest">
+                Já realizei o envio
+            </button>
+        </div>
+    </div>
 
-<script>
-const API_URL = "https://oxix-wepz.onrender.com";
+    <script>
+        const API_URL = "https://oxix-wepz.onrender.com";
 
-async function simulate() {
-const amount = document.getElementById('amount').value;
-const asset = document.getElementById('asset').value;
-const resultDiv = document.getElementById('result');
-const quoteVal = document.getElementById('quote-value');
-const feeInfo = document.getElementById('fee-info');
+        async function simulate() {
+            const amount = document.getElementById('amount').value;
+            const asset = document.getElementById('asset').value;
+            const resultDiv = document.getElementById('result');
+            const quoteVal = document.getElementById('quote-value');
+            const feeInfo = document.getElementById('fee-info');
 
-if (!amount || amount <= 0) { alert('Insira um valor válido.'); return; }
+            if (!amount || amount <= 0) { alert('Insira um valor válido.'); return; }
 
-try {
-const response = await fetch(`${API_URL}/simulate?amount=${amount}&asset=${asset}`);
-if (!response.ok) throw new Error();
-const data = await response.json();
+            try {
+                const response = await fetch(`${API_URL}/simulate?amount=${amount}&asset=${asset}`);
+                if (!response.ok) throw new Error();
+                const data = await response.json();
+                const quote = data.quote || data;
 
-const quote = data.quote || data;
+                resultDiv.classList.remove('hidden');
+                quoteVal.innerText = `R$ ${quote.final_amount.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+                feeInfo.innerText = `Cotação Real: R$ ${quote.market_rate} | Spread: ${quote.spread_percent}%`;
+            } catch (error) { alert('Erro de conexão. Tente novamente.'); }
+        }
 
-resultDiv.classList.remove('hidden');
-quoteVal.innerText = `R$ ${quote.final_amount.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-feeInfo.innerText = `Taxa aplicada: ${quote.fee_percent}% (${quote.fee_amount} USDT)`;
-} catch (error) { alert('Erro de conexão. Tente novamente.'); }
-}
+        async function startTransaction() {
+            const amount = document.getElementById('amount').value;
+            const pixKey = document.getElementById('pix_key').value;
+            const modal = document.getElementById('paymentModal');
+            const walletSpan = document.getElementById('walletAddress');
+            const qrImg = document.getElementById('qrCode');
+            const qrLoad = document.getElementById('qrLoading');
 
-async function startTransaction() {
-const amount = document.getElementById('amount').value;
-const pixKey = document.getElementById('pix_key').value;
-const modal = document.getElementById('paymentModal');
-const walletSpan = document.getElementById('walletAddress');
-const qrImg = document.getElementById('qrCode');
-const qrLoad = document.getElementById('qrLoading');
+            if (!pixKey) { alert('Por favor, informe sua chave PIX.'); return; }
 
-if (!pixKey) { alert('Por favor, informe sua chave PIX para receber o valor.'); return; }
+            try {
+                const response = await fetch(`${API_URL}/create_transaction`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: parseFloat(amount), pix_key: pixKey })
+                });
+                const data = await response.json();
+                if (data.wallet) {
+                    walletSpan.innerText = data.wallet;
+                    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${data.wallet}`;
+                    qrImg.classList.remove('hidden');
+                    qrLoad.classList.add('hidden');
+                    modal.style.display = 'flex';
+                }
+            } catch (error) { alert('Erro ao gerar carteira.'); }
+        }
 
-try {
-const response = await fetch(`${API_URL}/create_transaction`, {
-method: 'POST',
-headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({ amount: parseFloat(amount), pix_key: pixKey })
-});
-const data = await response.json();
-if (data.wallet) {
-walletSpan.innerText = data.wallet;
-qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${data.wallet}`;
-qrImg.classList.remove('hidden');
-qrLoad.classList.add('hidden');
-modal.style.display = 'flex';
-}
-} catch (error) { alert('Erro ao gerar carteira.'); }
-}
+        function copyWallet() {
+            const text = document.getElementById('walletAddress').innerText;
+            navigator.clipboard.writeText(text);
+            alert('Endereço copiado!');
+        }
 
-function copyWallet() {
-const text = document.getElementById('walletAddress').innerText;
-navigator.clipboard.writeText(text);
-alert('Endereço copiado!');
-}
-
-function closeModal() { document.getElementById('paymentModal').style.display = 'none'; }
-function confirmPayment() { alert('Pagamento registrado. Nossa rede está processando a liquidação automática para sua chave PIX.'); closeModal(); }
-lucide.createIcons();
-</script>
-</body>
-</html>
-``````html
-</script>
-</body>
-</html>
-``````html
-<script>
-const API_URL = "https://oxix-wepz.onrender.com";
-
-async function simulate() {
-const amount = document.getElementById('amount').value;
-const asset = document.getElementById('asset').value;
-const resultDiv = document.getElementById('result');
-const quoteVal = document.getElementById('quote-value');
-const feeInfo = document.getElementById('fee-info');
-
-if (!amount || amount <= 0) { alert('Insira um valor válido.'); return; }
-
-try {
-const response = await fetch(`${API_URL}/simulate?amount=${amount}&asset=${asset}`);
-if (!response.ok) throw new Error();
-const data = await response.json();
-
-const quote = data.quote || data;
-
-resultDiv.classList.remove('hidden');
-quoteVal.innerText = `R$ ${quote.final_amount.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-feeInfo.innerText = `Taxa aplicada: ${quote.fee_percent}% (${quote.fee_amount} USDT)`;
-} catch (error) { alert('Erro de conexão. Tente novamente.'); }
-}
-
-async function startTransaction() {
-const amount = document.getElementById('amount').value;
-const pixKey = document.getElementById('pix_key').value;
-const modal = document.getElementById('paymentModal');
-const walletSpan = document.getElementById('walletAddress');
-const qrImg = document.getElementById('qrCode');
-const qrLoad = document.getElementById('qrLoading');
-
-if (!pixKey) { alert('Por favor, informe sua chave PIX para receber o valor.'); return; }
-
-try {
-const response = await fetch(`${API_URL}/create_transaction`, {
-method: 'POST',
-headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({ amount: parseFloat(amount), pix_key: pixKey })
-});
-const data = await response.json();
-if (data.wallet) {
-walletSpan.innerText = data.wallet;
-qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${data.wallet}`;
-qrImg.classList.remove('hidden');
-qrLoad.classList.add('hidden');
-modal.style.display = 'flex';
-}
-} catch (error) { alert('Erro ao gerar carteira.'); }
-}
-
-function copyWallet() {
-const text = document.getElementById('walletAddress').innerText;
-navigator.clipboard.writeText(text);
-alert('Endereço copiado!');
-}
-
-function closeModal() { document.getElementById('paymentModal').style.display = 'none'; }
-function confirmPayment() { alert('Pagamento registrado. Nossa rede está processando a liquidação automática para sua chave PIX.'); closeModal(); }
-lucide.createIcons();
-</script>
+        function closeModal() { document.getElementById('paymentModal').style.display = 'none'; }
+        function confirmPayment() { alert('Pagamento registrado. Processando liquidação automática...'); closeModal(); }
+        lucide.createIcons();
+    </script>
 </body>
 </html>
