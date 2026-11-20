@@ -1,13 +1,16 @@
-from fastapi import FastAPI, HTTPException, Header, Depends
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import httpx
-import time
-import uuid
-from typing import Optional
+import requests
+import logging
 
-app = FastAPI(title="CryptoPix Genesis Protocol", version="2.0.0-AI")
+# Configuração de Logs para ver a chave PIX no Render
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("cryptopix")
 
+app = FastAPI()
+
+# CORS configurado para aceitar requisições do seu frontend no GitHub Pages
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,89 +19,64 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- CONFIGURAÇÕES DO PROTOCOLO ---
-# Agora usamos Spread (Lucro) em vez de taxa fixa descontada
-SPREAD_PERCENT = 3.5 
-WALLET_ADDRESS = "TMN2ShY4KSex1gtc68AL9LziXr8i4RdFYM"
+# Chave de segurança para evitar que qualquer um use sua API
 MASTER_API_KEY = "genesis_ai_secret_2026"
 
-transaction_ledger = {}
+class SimulationRequest(BaseModel):
+    amount: float
 
 class TransactionRequest(BaseModel):
     amount: float
     pix_key: str
-    agent_id: Optional[str] = "human_user"
-    webhook_url: Optional[str] = None
 
-async def verify_api_key(x_api_key: str = Header(None)):
-    if x_api_key != MASTER_API_KEY:
-        raise HTTPException(status_code=403, detail="Invalid API Key")
-    return x_api_key
-
-async def get_real_usdt_rate():
-    """Busca a cotação real do Dólar via AwesomeAPI"""
+def get_usdt_price():
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get("https://economia.awesomeapi.com.br/last/USD-BRL")
-            data = response.json()
-            return float(data["USDBRL"]["bid"])
-    except Exception:
-        return 5.70  # Fallback caso a API caia
+        # Busca cotação do Dólar/USDT via AwesomeAPI
+        response = requests.get("https://brasilapi.com/api/usd")
+        data = response.json()
+        return data['usd']['bid']
+    except Exception as e:
+        logger.error(f"Erro ao buscar cotação: {e}")
+        return 5.60  # Valor de fallback caso a API caia
 
-@app.get("/")
-async def root():
-    return {"protocol": "CryptoPix Genesis", "status": "Operational"}
+@app.get("/check_status")
+async def check_status():
+    return {"status": "online", "message": "Servidor CryptoPix Operacional"}
 
 @app.post("/simulate")
-async def simulate(amount: float, asset: str):
-    if amount <= 0:
-        raise HTTPException(status_code=400, detail="Amount must be positive")
+async def simulate(request: SimulationRequest, x_api_key: str = Header(None)):
+    if x_api_key != MASTER_API_KEY:
+        raise HTTPException(status_code=403, detail="API Key Inválida")
+
+    price = get_usdt_price()
+    # Spread de 3.5% para lucro e taxas da MEXC
+    spread = 1.035 
     
-    # 1. Pega a cotação real do mercado
-    market_rate = await get_real_usdt_rate()
-    
-    # 2. Aplica o Spread de 3,5% (O cliente paga um pouco mais caro que o mercado)
-    # Formula: Valor = (Quantidade * Cotação) * (1 - 0.035) -> Isso é a liquidação líquida para o cliente
-    final_amount = (amount * market_rate) * (1 - (SPREAD_PERCENT / 100))
+    # Cálculo: Valor USDT * Preço Dólar * Spread
+    final_value = request.amount * price * spread
     
     return {
-        "quote": {
-            "final_amount": round(final_amount, 2),
-            "market_rate": market_rate,
-            "spread_percent": SPREAD_PERCENT,
-            "currency": "BRL",
-            "timestamp": time.time()
-        }
+        "amount": request.amount,
+        "price": price,
+        "final_value": round(final_value, 2)
     }
 
 @app.post("/create_transaction")
-async def create_transaction(req: TransactionRequest):
-    try:
-        tx_id = f"GEN-AI-{uuid.uuid4().hex[:8].upper()}"
-        transaction_ledger[tx_id] = {
-            "amount": req.amount,
-            "pix_key": req.pix_key,
-            "agent": req.agent_id,
-            "status": "PENDING_DEPOSIT",
-            "timestamp": time.time()
-        }
-        return {
-            "status": "success",
-            "transaction_id": tx_id,
-            "wallet": WALLET_ADDRESS
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+async def create_transaction(request: TransactionRequest, x_api_key: str = Header(None)):
+    if x_api_key != MASTER_API_KEY:
+        raise HTTPException(status_code=403, detail="API Key Inválida")
 
-@app.get("/agent/status/{tx_id}", dependencies=[Depends(verify_api_key)])
-async def get_agent_status(tx_id: str):
-    if tx_id not in transaction_ledger:
-        raise HTTPException(status_code=404, detail="Not found")
-    return {"transaction_id": tx_id, "data": transaction_ledger[tx_id]}
+    # LOG CRUCIAL: Aqui você verá a chave PIX do cliente nos logs do Render
+    logger.info(f"NOVA TRANSAÇÃO: Valor {request.amount} USDT | Chave PIX: {request.pix_key}")
+    
+    # Aqui entraria a lógica de monitoramento da carteira MEXC
+    return {
+        "status": "pending",
+        "message": "Aguardando depósito de USDT",
+        "wallet": "TMN2ShY4KSex1gtc68AL9LziXr8i4RdFYM",
+        "network": "TRC20"
+    }
 
-@app.post("/agent/update_status/{tx_id}", dependencies=[Depends(verify_api_key)])
-async def update_status(tx_id: str, status: str):
-    if tx_id not in transaction_ledger:
-        raise HTTPException(status_code=404, detail="Not found")
-    transaction_ledger[tx_id]["status"] = status
-    return {"status": "updated", "new_status": status}
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
