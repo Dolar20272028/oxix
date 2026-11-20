@@ -20,8 +20,7 @@
         .gold-text { background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-light) 50%, var(--gold-dark) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .glass-card { background: var(--bg-card); backdrop-filter: blur(20px); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 32px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5); }
         .input-field { background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(212, 175, 55, 0.2); color: white; transition: all 0.3s ease; font-family: 'JetBrains Mono', monospace; }
-        .input-field:focus { border-color: var(--gold-primary); outline: none; box-shadow: 0 0 15px rgba(212, 175, 55<channel|>, background: rgba(30, 41, 59, 0.6);
-        }
+        .input-field:focus { border-color: var(--gold-primary); outline: none; box-shadow: 0 0 15px rgba(212, 175, 55, 0.2); background: rgba(30, 41, 59, 0.6); }
         .btn-primary { 
             background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%); 
             color: #000; 
@@ -70,7 +69,7 @@
         }
     </style>
 </head>
-<body>
+<body class="flex flex-col min-h-screen">
 
     <!-- BANNER DE IMPACTO -->
     <div class="hero-container">
@@ -79,7 +78,7 @@
     </div>
 
     <!-- CONTEÚDO OPERACIONAL -->
-    <main class="flex flex-col items-center justify-center p-6 -mt-20 relative z-10 max-w-6xl mx-auto">
+    <main class="flex flex-col items-center justify-center p-6 -mt-20 relative z-10 max-w-6xl mx-auto w-full">
         <div class="glass-card p-8 w-full max-w-md relative overflow-hidden">
             
             <div class="absolute top-0 left-0 w-full h-1 gold-gradient"></div>
@@ -107,22 +106,24 @@
                 <button onclick="simulate()" id="btnSimulate" class="btn-primary w-full p-4 rounded-2xl text-sm tracking-widest">
                     Simular Operação
                 </button>
-            </div>
 
-            <!-- Resultado da Simulação -->
-            <div id="result" class="hidden mt-8 p-6 rounded-3xl bg-yellow-500/5 border border-yellow-500/20 text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <p class="text-gray-400 text-xs uppercase mb-1">Cotação Final Estimada</p>
-                <div id="quote-value" class="text-5xl font-bold gold-text mb-2">R$ 0,00</div>
-                <p id="fee-info" class="text-[10px] text-gray-500 mb-6"></p>
+                <!-- RESULTADO INTEGRADO (Aparece logo abaixo do botão) -->
+                <div id="result" class="hidden space-y-6 animate-in fade-in slide-in-from-top-2 duration-500">
+                    <div class="p-6 rounded-3xl bg-yellow-500/5 border border-yellow-500/20 text-center">
+                        <p class="text-gray-400 text-xs uppercase mb-1">Cotação Final Estimada</p>
+                        <div id="quote-value" class="text-5xl font-bold gold-text mb-2">R$ 0,00</div>
+                        <p id="fee-info" class="text-[10px] text-gray-500"></p>
+                    </div>
 
-                <div class="mb-6 text-left">
-                    <label class="block text-[10px] uppercase tracking-wider text-gray-400 mb-2 ml-1">Chave PIX para Recebimento</label>
-                    <input type="text" id="pix_key" placeholder="CPF, Email ou Telefone" class="input-field w-full p-4 rounded-2xl text-sm">
+                    <div class="group">
+                        <label class="block text-[10px] uppercase tracking-wider text-gray-400 mb-2 ml-1">Chave PIX para Recebimento</label>
+                        <input type="text" id="pix_key" placeholder="CPF, Email ou Telefone" class="input-field w-full p-4 rounded-2xl text-sm">
+                    </div>
+
+                    <button onclick="startTransaction()" class="btn-primary w-full p-4 rounded-2xl text-sm tracking-widest">
+                        Iniciar Troca Agora
+                    </button>
                 </div>
-
-                <button onclick="startTransaction()" class="btn-primary w-full p-4 rounded-2xl text-sm tracking-widest">
-                    Iniciar Troca Agora
-                </button>
             </div>
         </div>
 
