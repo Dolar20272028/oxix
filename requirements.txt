@@ -3,3 +3,4 @@ uvicorn
 web3
 python-multipart
 pyjwt
+httpx
