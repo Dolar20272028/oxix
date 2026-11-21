@@ -17,7 +17,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ESSA CHAVE DEVE SER IGUAL NO FRONTEND
+# CHAVE DE SEGURANÇA SINCRONIZADA COM O FRONTEND
 MASTER_API_KEY = "genesis_ai_secret_2026"
 
 class SimulationRequest(BaseModel):
@@ -29,24 +29,26 @@ class TransactionRequest(BaseModel):
 
 def get_usdt_price():
     try:
+        # Tentativa de cotação real
         response = requests.get("https://brasilapi.com/api/usd", timeout=5)
         data = response.json()
         return data['usd']['bid']
     except Exception as e:
         logger.error(f"Erro cotação: {e}")
-        return 5.60
+        return 5.60 # Fallback seguro
 
 @app.get("/check_status")
 async def check_status():
-    return {"status": "online"}
+    return {"status": "online", "version": "2.6.6-AI"}
 
 @app.post("/simulate")
 async def simulate(request: SimulationRequest, x_api_key: str = Header(None)):
     if x_api_key != MASTER_API_KEY:
-        logger.warning(f"Tentativa de acesso com chave errada: {x_api_key}")
+        logger.warning(f"Acesso negado. Chave: {x_api_key}")
         raise HTTPException(status_code=403, detail="API Key Inválida")
 
     price = get_usdt_price()
+    # Spread de lucro configurado
     spread = 1.035 
     final_value = request.amount * price * spread
     
