@@ -1,14 +1,16 @@
+import requests
+import logging
 from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import requests
-import logging
 
+# Configuração de Logs
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("cryptopix")
 
 app = FastAPI()
 
+# CORS configurado para aceitar requisições do seu frontend (GitHub Pages/Render)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -20,6 +22,14 @@ app.add_middleware(
 # CHAVE DE SEGURANÇA SINCRONIZADA COM O FRONTEND
 MASTER_API_KEY = "genesis_ai_secret_2026"
 
+# SISTEMA DE REDUNDÂNCIA (DESCENTRALIZAÇÃO DE FONTE)
+# Se a primeira falhar (SSL, Timeout, Queda), ele pula para a próxima automaticamente
+PRICE_SOURCES = [
+    {"name": "AwesomeAPI", "url": "https://economia.awesomeapi.com.br/last/USD-BRL", "parser": lambda d: float(d['USD']['bid'])},
+    {"name": "Binance", "url": "https://api.binance.com/api/v3/ticker/price?symbol=USDTBRL", "parser": lambda d: float(d['price'])},
+    {"name": "BrasilAPI", "url": "https://brasilapi.com/api/usd", "parser": lambda d: float(d['usd']['bid'])}
+]
+
 class SimulationRequest(BaseModel):
     amount: float
 
@@ -28,18 +38,28 @@ class TransactionRequest(BaseModel):
     pix_key: str
 
 def get_usdt_price():
-    try:
-        # Tentativa de cotação real
-        response = requests.get("https://brasilapi.com/api/usd", timeout=5)
-        data = response.json()
-        return data['usd']['bid']
-    except Exception as e:
-        logger.error(f"Erro cotação: {e}")
-        return 5.60 # Fallback seguro
+    """
+    Tenta obter a cotação de múltiplas fontes para evitar erros de SSL 
+    ou quedas de API única.
+    """
+    for source in PRICE_SOURCES:
+        try:
+            # timeout de 3s para não travar o servidor do Render
+            response = requests.get(source["url"], timeout=3, verify=True) 
+            if response.status_code == 200:
+                price = source["parser"](response.json())
+                logger.info(f"Cotação obtida via {source['name']}: {price}")
+                return price
+        except Exception as e:
+            logger.warning(f"Falha na fonte {source['name']}: {e}")
+            continue 
+    
+    logger.error("TODAS as fontes de cotação falharam. Usando fallback estático.")
+    return 5.60 # Valor de segurança caso a internet caia totalmente
 
 @app.get("/check_status")
 async def check_status():
-    return {"status": "online", "version": "2.6.6-AI"}
+    return {"status": "online", "version": "2.6.6-AI-Redundant"}
 
 @app.post("/simulate")
 async def simulate(request: SimulationRequest, x_api_key: str = Header(None)):
@@ -48,7 +68,7 @@ async def simulate(request: SimulationRequest, x_api_key: str = Header(None)):
         raise HTTPException(status_code=403, detail="API Key Inválida")
 
     price = get_usdt_price()
-    # Spread de lucro configurado
+    # Spread de lucro (3.5%)
     spread = 1.035 
     final_value = request.amount * price * spread
     
