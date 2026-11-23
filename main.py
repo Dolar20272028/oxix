@@ -1,81 +1,127 @@
 import os
-from fastapi import FastAPI, HTTPException
+import time
+import logging
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import requests
-import time
+from collections import defaultdict
+
+# --- CONFIGURAÇÃO DE LOGS ---
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("CryptoPix_Bunker")
+
+# Log específico para capturar atacantes (HoneyPot)
+attack_logger = logging.getLogger("AttackLogger")
+handler = logging.FileHandler("attackers.log")
+handler.setFormatter(logging.Formatter('%(asctime)s - IP: %(client_ip)s - Agent: %(user_agent)s - Path: %(path)s'))
+attack_logger.addHandler(handler)
+attack_logger.setLevel(logging.INFO)
 
 app = FastAPI()
 
-# Blindagem de CORS
+# --- BLINDAGEM 1: CORS ESTRITO ---
+# O Render vai ler a variável ALLOWED_ORIGIN. Coloque seu domínio .io lá.
+ALLOWED_ORIGINS = [os.getenv("ALLOWED_ORIGIN", "https://seu-site.io")]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-COINGECKO_API_KEY = os.getenv("COINGECKO_API_KEY", "SUA_CHAVE_AQUI")
-CACHE_PRICE = {"price": 5.60, "timestamp": 0}
-CACHE_DURATION = 600 
+# --- BLINDAGEM 2: RATE LIMITER (ANTI-FLOOD) ---
+request_history = defaultdict(list)
+RATE_LIMIT = 20  # Máximo de requisições
+TIME_WINDOW = 60 # Por minuto
 
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    client_ip = request.client.host
+    now = time.time()
+    
+    request_history[client_ip] = [t for t in request_history[client_ip] if now - t < TIME_WINDOW]
+    
+    if len(request_history[client_ip]) >= RATE_LIMIT:
+        return JSONResponse(
+            status_code=429, 
+            content={"detail": "Too many requests. Slow down."}
+        )
+    
+    request_history[client_ip].append(now)
+    return await call_next(request)
+
+# --- MODELOS DE DADOS ---
 class SimulationRequest(BaseModel):
     amount: float
 
 class TransactionRequest(BaseModel):
     amount: float
     pix_key: str
+    client_name: str
+
+# --- CONFIGURAÇÕES DE NEGÓCIO ---
+FALLBACK_PRICE = 5.60
+SPREAD = 1.035 # 3.5% de taxa
 
 def get_usdt_price():
-    global CACHE_PRICE
-    current_time = time.time()
-    if current_time - CACHE_PRICE["timestamp"] < CACHE_DURATION:
-        return CACHE_PRICE["price"]
     try:
-        url = "https://api.coingecko.com/api/v3/simple/price"
-        params = {"ids": "tether", "vs_currencies": "brl", "x_cg_demo_api_key": COINGECKO_API_KEY}
-        response = requests.get(url, params=params, timeout=10)
+        url = "https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=brl"
+        response = requests.get(url, timeout=5)
         data = response.json()
-        price = data["tether"]["brl"]
-        CACHE_PRICE = {"price": price, "timestamp": current_time}
-        return price
+        return data['tether']['brl']
     except Exception as e:
-        return CACHE_PRICE["price"]
+        logger.error(f"Erro na cotação: {e}. Usando fallback.")
+        return FALLBACK_PRICE
 
-@app.get("/check_status")
-async def check_status():
-    return {"status": "online", "message": "CryptoPix Backend Operacional"}
+def calculate_tier_fee(amount):
+    if amount >= 50000: return 1.001 
+    if amount >= 10000: return 1.005 
+    if amount >= 1000:  return 1.01  
+    return 1.02 
 
-@app.post("/simulate")
+# --- ROTAS OFUSCADAS (BLINDAGEM 3) ---
+
+@app.get("/api/v1/calc_7x") # Antigo /simulate
 async def simulate(req: SimulationRequest):
-    base_rate = get_usdt_price()
-    amount = req.amount
-    if amount >= 50000: multiplier = 1.001
-    elif amount >= 10000: multiplier = 1.005
-    elif amount >= 1000: multiplier = 1.01
-    else: multiplier = 1.02
-    total_brl = amount * base_rate * multiplier
-    return {"base_rate": base_rate, "total_brl": round(total_brl, 2), "multiplier": multiplier}
-
-@app.post("/create_transaction")
-async def create_transaction(req: TransactionRequest):
-    # --- AQUI ESTÁ O SEGREDO: O PRINT PARA O SEU LOG ---
-    print("\n" + "="*50)
-    print(f"🚨 NOVO PEDIDO DE TROCA! 🚨")
-    print(f"CHAVE PIX DO CLIENTE: {req.pix_key}")
-    print(f"VALOR EM USDT: {req.amount}")
-    print("="*50 + "\n")
-    # -------------------------------------------------
-
-    wallet_address = "TXs1aB2c3D4e5F6g7H8i9J0kLmMnNoOpQrS" # Sua carteira USDT
+    price = get_usdt_price()
+    fee_multiplier = calculate_tier_fee(req.amount)
+    total_brl = (req.amount * price) * fee_multiplier * SPREAD
+    
     return {
         "status": "success",
-        "wallet": wallet_address,
-        "amount_usdt": req.amount,
-        "pix_key": req.pix_key
+        "price": price,
+        "total_brl": round(total_brl, 2),
+        "fee_applied": f"{((fee_multiplier-1)*100):.2f}%"
     }
+
+@app.post("/api/v1/exec_9z") # Antigo /create_transaction
+async def create_transaction(data: TransactionRequest):
+    logger.info(f"NOVO PEDIDO: {data.client_name} | {data.amount} USDT | PIX: {data.pix_key}")
+    
+    return {
+        "status": "pending",
+        "message": "Pedido registrado. Aguardando depósito de USDT.",
+        "wallet": "T3kS...XyZ123" 
+    }
+
+# --- CONTRA-INTELIGÊNCIA (HONEYPOT) ---
+
+@app.get("/admin") # Rota armadilha
+async def admin_honeypot(request: Request):
+    client_ip = request.client.host
+    user_agent = request.headers.get("user-agent", "Unknown")
+    path = request.url.path
+    attack_logger.info("", extra={"client_ip": client_ip, "user_agent": user_agent, "path": path})
+    raise HTTPException(status_code=404, detail="Page not found")
+
+@app.get("/health")
+async def health():
+    return {"status": "online"}
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=10000)
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
