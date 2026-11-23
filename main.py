@@ -1,8 +1,12 @@
 import requests
 import logging
+import urllib3
 from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
+# Remove os avisos de SSL no terminal para não poluir os logs do Render
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Configuração de Logs
 logging.basicConfig(level=logging.INFO)
@@ -10,7 +14,7 @@ logger = logging.getLogger("cryptopix")
 
 app = FastAPI()
 
-# CORS configurado para aceitar requisições do seu frontend (GitHub Pages/Render)
+# CORS configurado para aceitar requisições do seu frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -23,11 +27,12 @@ app.add_middleware(
 MASTER_API_KEY = "genesis_ai_secret_2026"
 
 # SISTEMA DE REDUNDÂNCIA (DESCENTRALIZAÇÃO DE FONTE)
-# Se a primeira falhar (SSL, Timeout, Queda), ele pula para a próxima automaticamente
+# Agora inclui .io e .com para a BrasilAPI e ignora erro de SSL
 PRICE_SOURCES = [
     {"name": "AwesomeAPI", "url": "https://economia.awesomeapi.com.br/last/USD-BRL", "parser": lambda d: float(d['USD']['bid'])},
     {"name": "Binance", "url": "https://api.binance.com/api/v3/ticker/price?symbol=USDTBRL", "parser": lambda d: float(d['price'])},
-    {"name": "BrasilAPI", "url": "https://brasilapi.com/api/usd", "parser": lambda d: float(d['usd']['bid'])}
+    {"name": "BrasilAPI_IO", "url": "https://brasilapi.io/api/usd", "parser": lambda d: float(d['usd'])},
+    {"name": "BrasilAPI_COM", "url": "https://brasilapi.com/api/usd", "parser": lambda d: float(d['usd'])}
 ]
 
 class SimulationRequest(BaseModel):
@@ -39,13 +44,13 @@ class TransactionRequest(BaseModel):
 
 def get_usdt_price():
     """
-    Tenta obter a cotação de múltiplas fontes para evitar erros de SSL 
-    ou quedas de API única.
+    Tenta obter a cotação de múltiplas fontes. 
+    Usa verify=False para ignorar certificados SSL expirados.
     """
     for source in PRICE_SOURCES:
         try:
-            # timeout de 3s para não travar o servidor do Render
-            response = requests.get(source["url"], timeout=3, verify=True) 
+            # verify=False ignora o erro de certificado expirado que estava travando seu log
+            response = requests.get(source["url"], timeout=3, verify=False) 
             if response.status_code == 200:
                 price = source["parser"](response.json())
                 logger.info(f"Cotação obtida via {source['name']}: {price}")
@@ -90,3 +95,7 @@ async def create_transaction(request: TransactionRequest, x_api_key: str = Heade
         "wallet": "TMN2ShY4KSex1gtc68AL9LziXr8i4RdFYM",
         "network": "TRC20"
     }
+
+@app.get("/")
+async def root():
+    return {"status": "Online", "message": "CryptoPix API is running"}
