@@ -1,113 +1,79 @@
+import os
 import requests
-import logging
-import urllib3
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-
-# Remove os avisos de SSL no terminal
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+import logging
 
 # Configuração de Logs
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("cryptopix")
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-# CORS configurado para aceitar requisições do seu frontend
+# CORS configurado
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=["*"], 
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# CHAVE DE SEGURANÇA SINCRONIZADA COM O FRONTEND
-MASTER_API_KEY = "genesis_ai_secret_2026"
-
-# NOVA LISTA DE FONTES - PRIORIZANDO COINGECKO (MAIS ESTÁVEL NO RENDER)
-PRICE_SOURCES = [
-    {
-        "name": "CoinGecko", 
-        "url": "https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=brl", 
-        "parser": lambda d: float(d['tether']['brl'])
-    },
-    {
-        "name": "AwesomeAPI", 
-        "url": "https://economia.awesomeapi.com.br/last/USD-BRL", 
-        "parser": lambda d: float(d['USD']['bid'])
-    },
-    {
-        "name": "Binance", 
-        "url": "https://api.binance.com/api/v3/ticker/price?symbol=USDTBRL", 
-        "parser": lambda d: float(d['price'])
-    }
-]
+# --- SEGURANÇA: CARREGAMENTO DE CHAVES ---
+# Em vez de escrever a chave aqui, o código busca no sistema do Render
+# Se não encontrar, ele usa um valor padrão ou retorna erro
+API_KEY_COINGECKO = os.getenv("COINGECKO_API_KEY", "chave_padrao_se_nao_houver")
+SECRET_TOKEN_ADMIN = os.getenv("ADMIN_SECRET_TOKEN", "token_seguro_padrao")
 
 class SimulationRequest(BaseModel):
     amount: float
 
-class TransactionRequest(BaseModel):
-    amount: float
-    pix_key: str
+def get_dynamic_rate(amount: float, base_rate: float):
+    if amount >= 50000:
+        return base_rate * 1.001 
+    elif amount >= 10000:
+        return base_rate * 1.005
+    elif amount >= 1000:
+        return base_rate * 1.01
+    else:
+        return base_rate * 1.02
 
-def get_usdt_price():
-    """
-    Tenta obter a cotação priorizando CoinGecko para evitar bloqueios de IP do Render.
-    """
-    for source in PRICE_SOURCES:
-        try:
-            logger.info(f"Tentando conectar na fonte {source['name']}...")
-            response = requests.get(source["url"], timeout=10, verify=False) 
-            
-            if response.status_code == 200:
-                price = source["parser"](response.json())
-                logger.info(f"SUCESSO! Cotação obtida via {source['name']}: {price}")
-                return price
-            else:
-                logger.warning(f"Fonte {source['name']} respondeu com status {response.status_code}")
-        
-        except Exception as e:
-            logger.error(f"ERRO na fonte {source['name']}: {type(e).__name__} - {str(e)}")
-            continue 
-    
-    logger.error("CRÍTICO: Todas as fontes falharam. Usando fallback 5.60.")
-    return 5.60
+def fetch_usdt_price():
+    try:
+        # Exemplo de como usar a chave criptografada/ambiente na URL
+        url = f"https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=brl&x_cg_pro_api_key={API_KEY_COINGECKO}"
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        return float(data['tether']['brl'])
+    except Exception as e:
+        logger.error(f"Erro ao buscar cotação: {e}")
+        return 5.60
 
 @app.get("/check_status")
 async def check_status():
-    return {"status": "online", "version": "2.6.9-AI-CoinGecko"}
+    return {"status": "online", "source": "CoinGecko"}
 
 @app.post("/simulate")
-async def simulate(request: SimulationRequest, x_api_key: str = Header(None)):
-    if x_api_key != MASTER_API_KEY:
-        logger.warning(f"Acesso negado. Chave: {x_api_key}")
-        raise HTTPException(status_code=403, detail="API Key Inválida")
+async def simulate(request: SimulationRequest):
+    if request.amount <= 0:
+        raise HTTPException(status_code=400, detail="O valor deve ser maior que zero.")
+    
+    if request.amount > 100000000:
+        raise HTTPException(status_code=400, detail="Valor excede o limite operacional.")
 
-    price = get_usdt_price()
-    spread = 1.035 
-    final_value = request.amount * price * spread
+    base_rate = fetch_usdt_price()
+    final_rate = get_dynamic_rate(request.amount, base_rate)
+    total_brl = request.amount * final_rate
     
     return {
         "amount": request.amount,
-        "price": price,
-        "final_value": round(final_value, 2)
+        "base_rate": round(base_rate, 2),
+        "final_rate": round(final_rate, 4),
+        "total_brl": round(total_brl, 2),
+        "message": "Cotação calculada com taxa de volume aplicada."
     }
 
-@app.post("/create_transaction")
-async def create_transaction(request: TransactionRequest, x_api_key: str = Header(None)):
-    if x_api_key != MASTER_API_KEY:
-        raise HTTPException(status_code=403, detail="API Key Inválida")
-
-    logger.info(f"NOVA TRANSAÇÃO: {request.amount} USDT | PIX: {request.pix_key}")
-    
-    return {
-        "status": "pending",
-        "wallet": "TMN2ShY4KSex1gtc68AL9LziXr8i4RdFYM",
-        "network": "TRC20"
-    }
-
-@app.get("/")
-async def root():
-    return {"status": "Online", "message": "CryptoPix API is running"}
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
