@@ -26,12 +26,11 @@ app.add_middleware(
 # CHAVE DE SEGURANÇA SINCRONIZADA COM O FRONTEND
 MASTER_API_KEY = "genesis_ai_secret_2026"
 
-# SISTEMA DE REDUNDÂNCIA (DESCENTRALIZAÇÃO DE FONTE)
-# Agora inclui .io e .com para a BrasilAPI e ignora erro de SSL
+# SISTEMA DE REDUNDÂNCIA (SÓ COM FONTES ESTÁVEIS)
+# Removido .io por erro de DNS; .com mantido como última opção com verify=False
 PRICE_SOURCES = [
     {"name": "AwesomeAPI", "url": "https://economia.awesomeapi.com.br/last/USD-BRL", "parser": lambda d: float(d['USD']['bid'])},
     {"name": "Binance", "url": "https://api.binance.com/api/v3/ticker/price?symbol=USDTBRL", "parser": lambda d: float(d['price'])},
-    {"name": "BrasilAPI_IO", "url": "https://brasilapi.io/api/usd", "parser": lambda d: float(d['usd'])},
     {"name": "BrasilAPI_COM", "url": "https://brasilapi.com/api/usd", "parser": lambda d: float(d['usd'])}
 ]
 
@@ -45,12 +44,12 @@ class TransactionRequest(BaseModel):
 def get_usdt_price():
     """
     Tenta obter a cotação de múltiplas fontes. 
-    Usa verify=False para ignorar certificados SSL expirados.
+    Usa verify=False para ignorar certificados SSL expirados e timeout maior para estabilidade.
     """
     for source in PRICE_SOURCES:
         try:
-            # verify=False ignora o erro de certificado expirado que estava travando seu log
-            response = requests.get(source["url"], timeout=3, verify=False) 
+            # Aumentado timeout para 5s para evitar falhas de conexão no Render
+            response = requests.get(source["url"], timeout=5, verify=False) 
             if response.status_code == 200:
                 price = source["parser"](response.json())
                 logger.info(f"Cotação obtida via {source['name']}: {price}")
@@ -60,11 +59,11 @@ def get_usdt_price():
             continue 
     
     logger.error("TODAS as fontes de cotação falharam. Usando fallback estático.")
-    return 5.60 # Valor de segurança caso a internet caia totalmente
+    return 5.60 # Valor de segurança
 
 @app.get("/check_status")
 async def check_status():
-    return {"status": "online", "version": "2.6.6-AI-Redundant"}
+    return {"status": "online", "version": "2.6.7-AI-Stable"}
 
 @app.post("/simulate")
 async def simulate(request: SimulationRequest, x_api_key: str = Header(None)):
