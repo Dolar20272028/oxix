@@ -20,7 +20,10 @@ app.add_middleware(
 )
 
 # --- SEGURANÇA E CACHE ---
-API_KEY_COINGECKO = os.getenv("COINGECKO_API_KEY", "Sathoshioxix")
+# Removido o fallback "Sathoshioxix" para evitar Erro 400. 
+# Agora ele busca apenas a chave real configurada no Render.
+API_KEY_COINGECKO = os.getenv("COINGECKO_API_KEY", "")
+
 # Variáveis para o cache de preço
 cached_price = None
 last_fetch_time = 0
@@ -49,6 +52,7 @@ def fetch_usdt_price():
         return cached_price
 
     try:
+        # A URL agora usa a chave vinda do Environment do Render
         url = f"https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=brl&x_cg_pro_api_key={API_KEY_COINGECKO}"
         response = requests.get(url, timeout=10)
         
