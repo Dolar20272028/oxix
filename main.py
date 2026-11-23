@@ -27,7 +27,7 @@ app.add_middleware(
 MASTER_API_KEY = "genesis_ai_secret_2026"
 
 # SISTEMA DE REDUNDÂNCIA (SÓ COM FONTES ESTÁVEIS)
-# Removido .io por erro de DNS; .com mantido como última opção com verify=False
+# Prioridade para AwesomeAPI e Binance. BrasilAPI_COM como última opção.
 PRICE_SOURCES = [
     {"name": "AwesomeAPI", "url": "https://economia.awesomeapi.com.br/last/USD-BRL", "parser": lambda d: float(d['USD']['bid'])},
     {"name": "Binance", "url": "https://api.binance.com/api/v3/ticker/price?symbol=USDTBRL", "parser": lambda d: float(d['price'])},
@@ -43,27 +43,32 @@ class TransactionRequest(BaseModel):
 
 def get_usdt_price():
     """
-    Tenta obter a cotação de múltiplas fontes. 
-    Usa verify=False para ignorar certificados SSL expirados e timeout maior para estabilidade.
+    Versão de Debug Total: Imprime o erro exato de cada fonte para diagnóstico.
     """
     for source in PRICE_SOURCES:
         try:
-            # Aumentado timeout para 5s para evitar falhas de conexão no Render
+            logger.info(f"Tentando conectar na fonte {source['name']}...")
+            # timeout de 5s para dar tempo do servidor do Render responder
             response = requests.get(source["url"], timeout=5, verify=False) 
+            
             if response.status_code == 200:
                 price = source["parser"](response.json())
-                logger.info(f"Cotação obtida via {source['name']}: {price}")
+                logger.info(f"SUCESSO! Cotação obtida via {source['name']}: {price}")
                 return price
+            else:
+                logger.warning(f"Fonte {source['name']} respondeu com status {response.status_code}")
+        
         except Exception as e:
-            logger.warning(f"Falha na fonte {source['name']}: {e}")
+            # Aqui imprimimos o erro detalhado para saber EXATAMENTE por que falhou
+            logger.error(f"ERRO DETALHADO na fonte {source['name']}: {type(e).__name__} - {str(e)}")
             continue 
     
-    logger.error("TODAS as fontes de cotação falharam. Usando fallback estático.")
+    logger.error("CRÍTICO: Todas as fontes falharam. Usando fallback 5.60.")
     return 5.60 # Valor de segurança
 
 @app.get("/check_status")
 async def check_status():
-    return {"status": "online", "version": "2.6.7-AI-Stable"}
+    return {"status": "online", "version": "2.6.8-AI-Debug-Mode"}
 
 @app.post("/simulate")
 async def simulate(request: SimulationRequest, x_api_key: str = Header(None)):
