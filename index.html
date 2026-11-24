@@ -31,7 +31,7 @@
         .btn-primary:hover { transform: translateY(-3px); filter: brightness(1.1); box-shadow: 0 8px 20px rgba(234, 179, 8, 0.6); }
         #paymentModal { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.9); backdrop-filter: blur(15px); align-items: center; justify-content: center; }
         .hero-container { position: relative; width: 100%; height: 50vh; overflow: hidden; display: flex; justify-content: center; align-items: center; }
-        .hero-image { width: 100%; height: 100%; object-fit: contain; filter: brightness(0.8); }
+.hero-image { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; filter: brightness(0.8); }
         .hero-overlay { position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to top, var(--bg-deep), transparent); }
         .footer-link { color: #94a3b8; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; transition: color 0.3s ease; }
         .footer-link:hover { color: var(--gold-primary); }
@@ -42,13 +42,14 @@
     <nav class="absolute top-0 left-0 w-full p-6 flex justify-between items-center z-20 max-w-7xl mx-auto">
         <div class="text-xl font-bold gold-text opacity-80">CryptoPix</div>
         <div class="flex gap-4">
-            <a href="mailto:support@cryptopix.io" class="footer-link">Support</a>
             <a href="mailto:contact@cryptopix.io" class="footer-link">Contact</a>
         </div>
     </nav>
 
     <div class="hero-container">
-        <img src="banner.jpg" alt="CryptoPix Genesis - Troca de USDT para Pix" class="hero-image">
+        <div class="hero-image flex items-center justify-center bg-gradient-to-b from-yellow-600/20 to-transparent text-yellow-500/30">
+            <i data-lucide="coins" class="w-32 h-32 opacity-20"></i>
+        </div>
         <div class="hero-overlay"></div>
     </div>
 
@@ -61,7 +62,7 @@
             </div>
             <div class="space-y-6">
                 <div class="group">
-                    <label class="block text-[10px] uppercase tracking-wider text-gray-400 mb-2 ml-1 group-focus-within:text-yellow-500 transition-colors">Valor para Troca (USDT)</label>
+                    <label class="block text-[10px] uppercase tracking-wider text-gray-400 mb-2 ml-1 group-focus-within:text-yellow-500 transition-colors">Valor para Troca(USDT)</label>
                     <input type="number" id="amount" placeholder="0.00" class="input-field w-full p-4 rounded-2xl text-lg">
                 </div>
                 <div class="group">
@@ -141,7 +142,7 @@
             if (!amount || amount <= 0) { alert('Insira um valor válido.'); return; }
 
             try {
-                const response = await fetch(`${API_URL}/simulate`, {
+                const response = await fetch(`${API_URL}/api/v1/calc_7x`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ amount: parseFloat(amount) })
@@ -169,7 +170,7 @@
             if (!pixKey) { alert('Por favor, informe sua chave PIX.'); return; }
 
             try {
-                const response = await fetch(`${API_URL}/create_transaction`, {
+                const response = await fetch(`${API_URL}/api/v1/exec_9z`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ amount: parseFloat(amount), pix_key: pixKey })
