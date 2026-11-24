@@ -21,13 +21,11 @@ attack_logger.setLevel(logging.INFO)
 
 app = FastAPI()
 
-# --- BLINDAGEM 1: CORS ESTRITO ---
-# O Render vai ler a variável ALLOWED_ORIGIN. Coloque seu domínio .io lá.
-ALLOWED_ORIGINS = [os.getenv("ALLOWED_ORIGIN", "https://seu-site.io")]
-
+# --- BLINDAGEM 1: CORS TOTALMENTE ABERTO ---
+# Usando ["*"] para garantir que cryptopix.io e qualquer outro acesso funcione sem erro 400
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -61,7 +59,7 @@ class SimulationRequest(BaseModel):
 class TransactionRequest(BaseModel):
     amount: float
     pix_key: str
-    client_name: str
+    # Removido client_name para bater com o que o HTML envia
 
 # --- CONFIGURAÇÕES DE NEGÓCIO ---
 FALLBACK_PRICE = 5.60
@@ -85,7 +83,7 @@ def calculate_tier_fee(amount):
 
 # --- ROTAS OFUSCADAS (BLINDAGEM 3) ---
 
-@app.get("/api/v1/calc_7x") # Antigo /simulate
+@app.post("/api/v1/calc_7x") # Corrigido para POST para bater com o HTML
 async def simulate(req: SimulationRequest):
     price = get_usdt_price()
     fee_multiplier = calculate_tier_fee(req.amount)
@@ -100,12 +98,12 @@ async def simulate(req: SimulationRequest):
 
 @app.post("/api/v1/exec_9z") # Antigo /create_transaction
 async def create_transaction(data: TransactionRequest):
-    logger.info(f"NOVO PEDIDO: {data.client_name} | {data.amount} USDT | PIX: {data.pix_key}")
+    logger.info(f"NOVO PEDIDO: {data.amount} USDT | PIX: {data.pix_key}")
     
     return {
         "status": "pending",
         "message": "Pedido registrado. Aguardando depósito de USDT.",
-        "wallet": "T3kS...XyZ123" 
+        "wallet": "T3kS...XyZ123" # Substitua pela sua carteira real
     }
 
 # --- CONTRA-INTELIGÊNCIA (HONEYPOT) ---
