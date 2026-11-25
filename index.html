@@ -19,7 +19,6 @@
             background-attachment: fixed;
             font-family: 'Inter', sans-serif;
         }
-
         .glass-card {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(12px);
@@ -27,20 +26,17 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
-
         .input-field {
             background: rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
             transition: all 0.3s ease;
         }
-
         .input-field:focus {
             border-color: #fbbf24;
             outline: none;
             box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.3);
         }
-
         .main-container {
             min-height: 100vh;
             display: flex;
@@ -55,14 +51,21 @@
     <div class="main-container">
         <div class="glass-card w-full max-w-md rounded-3xl p-8 text-white">
             
-            <!-- Header -->
             <div class="text-center mb-8">
                 <h1 class="text-3xl font-bold tracking-tight mb-2">Genesis Exchange</h1>
                 <p class="text-gray-300 text-sm">Conversão Instantânea USDT $\rightarrow$ PIX</p>
             </div>
 
-            <!-- Simulador -->
             <div class="space-y-6">
+                <!-- CAMPO CHAVE PIX (ADICIONADO PARA SALVAR O PEDIDO) -->
+                <div>
+                    <label class="block text-xs font-medium uppercase tracking-wider text-gray-400 mb-2">Sua Chave PIX para Recebimento</label>
+                    <div class="relative">
+                        <input type="text" id="pixKey" placeholder="CPF, E-mail ou Celular" 
+                               class="input-field w-full px-4 py-4 rounded-2xl text-lg font-semibold placeholder-gray-500">
+                    </div>
+                </div>
+
                 <div>
                     <label class="block text-xs font-medium uppercase tracking-wider text-gray-400 mb-2">Valor em USDT</label>
                     <div class="relative">
@@ -87,14 +90,13 @@
                     </div>
                 </div>
 
-                <button onclick="calculate()" 
+                <button onclick="calculateAndSave()" 
                         class="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-4 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2">
                     <i data-lucide="calculator" class="w-5 h-5"></i>
                     Simular Conversão
                 </button>
             </div>
 
-            <!-- Área de Pagamento -->
             <div id="paymentArea" class="hidden mt-8 pt-8 border-t border-white/20 space-y-6">
                 <div class="text-center">
                     <p class="text-sm text-gray-300 mb-4">Selecione a rede para depósito:</p>
@@ -125,31 +127,52 @@
 
     <script>
         const wallets = {
-            'TRC20': 'TXXXXX_SEU_ENDERECO_TRC20_AQUI',
-            'ERC20': '0xXXXX_SEU_ENDERECO_ERC20_AQUI',
-            'BEP20': '0xXXXX_SEU_ENDERECO_BEP20_AQUI'
+            'TRC20': 'TXXXXX_COLOQUE_SEU_ENDERECO_AQUI',
+            'ERC20': '0xXXXX_COLOQUE_SEU_ENDERECO_AQUI',
+            'BEP20': '0xXXXX_COLOQUE_SEU_ENDERECO_AQUI'
         };
 
-        // URL CORRIGIDA PARA O SEUbackend no Render
-        const API_URL = 'https://oxix-wepz.onrender.com/api/v1/calc_7x';
+        const API_URL_CALC = 'https://oxix-wepz.onrender.com/api/v1/calc_7x';
+        const API_URL_EXEC = 'https://oxix-wepz.onrender.com/api/v1/exec_9z';
 
-        async function calculate() {
+        async function calculateAndSave() {
+            const pixKey = document.getElementById('pixKey').value;
             const amount = document.getElementById('usdtAmount').value;
-            if (!amount || amount <= 0) return;
+
+            if (!pixKey) {
+                alert('Por favor, informe sua chave PIX para recebermos o valor.');
+                return;
+            }
+            if (!amount || amount <= 0) {
+                alert('Informe um valor válido de USDT.');
+                return;
+            }
 
             try {
-                const response = await fetch(`${API_URL}?valor=${amount}`);
-                const data = await response.json();
+                // 1. Faz a simulação de valor
+                const calcResponse = await fetch(`${API_URL_CALC}?valor=${amount}`);
+                const calcData = await calcResponse.json();
 
-                if (data.error) {
-                    alert(data.error);
+                if (calcData.error) {
+                    alert(calcData.error);
                     return;
                 }
 
-                document.getElementById('brlAmount').value = `R$ ${data.result.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-                
+                // 2. Salva o pedido no servidor (Execução)
+                await fetch(API_URL_EXEC, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount: parseFloat(amount),
+                        pix_key: pixKey
+                    })
+                });
+
+                // 3. Atualiza a tela
+                document.getElementById('brlAmount').value = `R$ ${calcData.result.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
                 document.getElementById('paymentArea').classList.remove('hidden');
                 lucide.createIcons();
+
             } catch (e) {
                 alert('Erro ao conectar com o servidor. Verifique sua conexão.');
             }
