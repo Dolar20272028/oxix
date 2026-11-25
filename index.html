@@ -6,6 +6,8 @@
     <title>Genesis Exchange | USDT to PIX</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Biblioteca para gerar QR Code localmente, sem depender de API externa -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         body {
             margin: 0;
@@ -44,6 +46,9 @@
             justify-content: center;
             padding: 20px;
         }
+        #qrcode img {
+            margin: 0 auto;
+        }
     </style>
 </head>
 <body>
@@ -57,7 +62,6 @@
             </div>
 
             <div class="space-y-6">
-                <!-- CAMPO CHAVE PIX (ADICIONADO PARA SALVAR O PEDIDO) -->
                 <div>
                     <label class="block text-xs font-medium uppercase tracking-wider text-gray-400 mb-2">Sua Chave PIX para Recebimento</label>
                     <div class="relative">
@@ -109,7 +113,8 @@
 
                     <div id="qrContainer" class="hidden flex flex-col items-center animate-in fade-in duration-500">
                         <div class="bg-white p-3 rounded-2xl mb-4">
-                            <img id="qrCode" src="" alt="QR Code de Pagamento" class="w-48 h-48">
+                            <!-- O QR Code será gerado dentro desta div -->
+                            <div id="qrcode"></div>
                         </div>
                         <p class="text-xs text-gray-400 mb-2 uppercase font-bold">Endereço da Carteira</p>
                         <div class="flex items-center gap-2 bg-black/40 p-3 rounded-xl border border-white/10 w-full overflow-hidden">
@@ -132,9 +137,11 @@
             'BEP20': '0xc6c86c35f6d204db217daf854e55f2a817392355'
         };
 
-
         const API_URL_CALC = 'https://oxix-wepz.onrender.com/api/v1/calc_7x';
         const API_URL_EXEC = 'https://oxix-wepz.onrender.com/api/v1/exec_9z';
+
+        // Instância global do gerador de QR Code
+        let qrGenerator = null;
 
         async function calculateAndSave() {
             const pixKey = document.getElementById('pixKey').value;
@@ -150,7 +157,6 @@
             }
 
             try {
-                // 1. Faz a simulação de valor
                 const calcResponse = await fetch(`${API_URL_CALC}?valor=${amount}`);
                 const calcData = await calcResponse.json();
 
@@ -159,7 +165,6 @@
                     return;
                 }
 
-                // 2. Salva o pedido no servidor (Execução)
                 await fetch(API_URL_EXEC, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -169,7 +174,6 @@
                     })
                 });
 
-                // 3. Atualiza a tela
                 document.getElementById('brlAmount').value = `R$ ${calcData.result.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
                 document.getElementById('paymentArea').classList.remove('hidden');
                 lucide.createIcons();
@@ -190,9 +194,20 @@
             activeBtn.classList.remove('text-white');
 
             const address = wallets[network];
-            const qrUrl = `https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${address}&choe=UTF-8`;
             
-            document.getElementById('qrCode').src = qrUrl;
+            // Limpa o QR Code anterior
+            document.getElementById('qrcode').innerHTML = "";
+            
+            // Gera o novo QR Code localmente
+            new QRCode(document.getElementById("qrcode"), {
+                text: address,
+                width: 192,
+                height: 192,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+            
             document.getElementById('walletAddress').innerText = address;
             document.getElementById('qrContainer').classList.remove('hidden');
         }
