@@ -24,25 +24,21 @@
 </head>
 <body class="flex items-center justify-center p-4 font-sans text-slate-200">
 
-    <!-- Container Vertical para Banner + Card -->
     <div class="flex flex-col items-center justify-center w-full max-w-md gap-6">
         
-        <!-- Banner do Ciborgue -->
+        <!-- Banner Local do Repositório -->
         <div class="w-full overflow-hidden rounded-[2rem] shadow-2xl border border-white/10">
-            <img src="https://i.ibb.co/L6fG8fF/banner-cryptopix.jpg" 
+            <img src="banner.jpg" 
                  alt="CryptoPix Genesis Banner" 
                  class="w-full h-auto block object-cover">
         </div>
 
-        <!-- Card de Simulação -->
         <div class="glass-card w-full rounded-[2.5rem] p-8 shadow-2xl">
-            <!-- Header -->
             <div class="text-center mb-8">
                 <h1 class="text-3xl font-black text-yellow-400 tracking-tighter mb-2">GENESIS EXCHANGE</h1>
                 <p class="text-xs text-slate-400 uppercase tracking-widest">Conversão de USDT para PIX Instantâneo</p>
             </div>
 
-            <!-- Form -->
             <div class="space-y-6">
                 <div>
                     <label class="block text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1">Valor para Troca (USDT)</label>
@@ -69,22 +65,17 @@
                     Simular Operação
                 </button>
 
-                <!-- Result Area -->
                 <div id="result-area" class="hidden space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div class="bg-slate-900/80 border border-yellow-500/30 rounded-3xl p-6 text-center relative overflow-hidden">
                         <div class="absolute top-0 left-0 w-1 h-full bg-yellow-400"></div>
-                        
                         <p class="text-[10px] font-bold text-slate-500 uppercase mb-1">Cotação de Mercado</p>
                         <p id="market-price" class="text-lg font-medium text-slate-300 mb-4">R$ 0,00</p>
-                        
                         <div class="h-px bg-slate-800 w-full mb-4"></div>
-                        
                         <p class="text-[10px] font-bold text-yellow-500 uppercase mb-1">Você Receberá Líquido</p>
                         <p id="final-value" class="text-4xl font-black text-white tracking-tighter">R$ 0,00</p>
-                        <p class="text-[9px] text-slate-500 mt-2 italic">Taxas de serviço e spread já inclusos no valor final</p>
                     </div>
 
-                    <div class="mt-4">
+                    <div>
                         <label class="block text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1">Chave PIX para Recebimento</label>
                         <input type="text" id="pix_key" placeholder="Insira sua chave PIX" 
                             class="w-full bg-slate-900/50 border border-slate-700 rounded-2xl py-4 px-5 text-md focus:outline-none focus:border-yellow-500 transition-all">
@@ -105,7 +96,6 @@
         async function simulate() {
             const amount = document.getElementById('amount').value;
             const btn = document.getElementById('btn-simulate');
-            
             if(!amount || amount <= 0) return alert('Insira um valor válido');
 
             btn.innerText = 'Calculando...';
@@ -117,16 +107,13 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ amount: parseFloat(amount) })
                 });
-
                 const data = await response.json();
                 
-                // CORREÇÃO: O main.py retorna 'total_brl', não 'result'
-                document.getElementById('market-price').innerText = `Cotação Base`R$ ${data.price.toFixed(2)}`;
+                document.getElementById('market-price').innerText = `Cotação Base: R$ ${data.price.toFixed(2)}`;
                 document.getElementById('final-value').innerText = `R$ ${data.total_brl.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-                
                 document.getElementById('result-area').classList.remove('hidden');
             } catch (e) {
-                alert('Erro na simulação. Tente novamente.');
+                alert('Erro na simulação. Verifique o servidor. Tente novamente.');
             } finally {
                 btn.innerText = 'Simular Operação';
                 btn.disabled = false;
@@ -137,7 +124,6 @@
             const amount = document.getElementById('amount').value;
             const pix = document.getElementById('pix_key').value;
             const btn = document.getElementById('btn-execute');
-
             if(!pix) return alert('Insira a chave PIX');
 
             btn.innerText = 'Processando...';
@@ -149,7 +135,6 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ amount: parseFloat(amount), pix_key: pix })
                 });
-
                 if(response.ok) {
                     alert('Pedido enviado com sucesso! Aguarde as instruções de depósito.');
                     location.reload();
