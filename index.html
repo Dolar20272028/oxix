@@ -24,65 +24,77 @@
 </head>
 <body class="flex items-center justify-center p-4 font-sans text-slate-200">
 
-    <div class="glass-card w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl">
-        <!-- Header -->
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-black text-yellow-400 tracking-tighter mb-2">GENESIS EXCHANGE</h1>
-            <p class="text-xs text-slate-400 uppercase tracking-widest">Conversão de USDT para PIX Instantâneo</p>
+    <!-- Container Vertical para Banner + Card -->
+    <div class="flex flex-col items-center justify-center w-full max-w-md gap-6">
+        
+        <!-- Banner do Ciborgue -->
+        <div class="w-full overflow-hidden rounded-[2rem] shadow-2xl border border-white/10">
+            <img src="https://i.ibb.co/L6fG8fF/banner-cryptopix.jpg" 
+                 alt="CryptoPix Genesis Banner" 
+                 class="w-full h-auto block object-cover">
         </div>
 
-        <!-- Form -->
-        <div class="space-y-6">
-            <div>
-                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1">Valor para Troca (USDT)</label>
-                <div class="relative">
-                    <input type="number" id="amount" placeholder="0.00" 
-                        class="w-full bg-slate-900/50 border border-slate-700 rounded-2xl py-4 px-5 text-xl font-medium focus:outline-none focus:border-yellow-500 transition-all placeholder:text-slate-600">
-                    <span class="absolute right-5 top-4 text-slate-500 font-bold">USDT</span>
-                </div>
+        <!-- Card de Simulação -->
+        <div class="glass-card w-full rounded-[2.5rem] p-8 shadow-2xl">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-black text-yellow-400 tracking-tighter mb-2">GENESIS EXCHANGE</h1>
+                <p class="text-xs text-slate-400 uppercase tracking-widest">Conversão de USDT para PIX Instantâneo</p>
             </div>
 
-            <div>
-                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1">Ativo de Origem</label>
-                <div class="relative">
-                    <select id="asset" class="w-full bg-slate-900/50 border border-slate-700 rounded-2xl py-4 px-5 text-lg font-medium focus:outline-none focus:border-yellow-500 transition-all appearance-none">
-                        <option value="USDT-TRC20">Tether (USDT - TRC20)</option>
-                        <option value="USDT-ERC20">Tether (USDT - ERC20)</option>
-                    </select>
-                    <i data-lucide="chevron-down" class="absolute right-5 top-4 text-slate-500 w-5 h-5 pointer-events-none"></i>
-                </div>
-            </div>
-
-            <button onclick="simulate()" id="btn-simulate" 
-                class="w-full bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-black py-4 rounded-2xl transition-all transform active:scale-95 uppercase tracking-tight">
-                Simular Operação
-            </button>
-
-            <!-- Result Area -->
-            <div id="result-area" class="hidden space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div class="bg-slate-900/80 border border-yellow-500/30 rounded-3xl p-6 text-center relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-yellow-400"></div>
-                    
-                    <p class="text-[10px] font-bold text-slate-500 uppercase mb-1">Cotação de Mercado</p>
-                    <p id="market-price" class="text-lg font-medium text-slate-300 mb-4">R$ 0,00</p>
-                    
-                    <div class="h-px bg-slate-800 w-full mb-4"></div>
-                    
-                    <p class="text-[10px] font-bold text-yellow-500 uppercase mb-1">Você Receberá Líquido</p>
-                    <p id="final-value" class="text-4xl font-black text-white tracking-tighter">R$ 0,00</p>
-                    <p class="text-[9px] text-slate-500 mt-2 italic">Taxas de serviço e spread já inclusos no valor final</p>
+            <!-- Form -->
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1">Valor para Troca (USDT)</label>
+                    <div class="relative">
+                        <input type="number" id="amount" placeholder="0.00" 
+                            class="w-full bg-slate-900/50 border border-slate-700 rounded-2xl py-4 px-5 text-xl font-medium focus:outline-none focus:border-yellow-500 transition-all placeholder:text-slate-600">
+                        <span class="absolute right-5 top-4 text-slate-500 font-bold">USDT</span>
+                    </div>
                 </div>
 
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1">Chave PIX para Recebimento</label>
-                    <input type="text" id="pix_key" placeholder="Insira sua chave PIX" 
-                        class="w-full bg-slate-900/50 border border-slate-700 rounded-2xl py-4 px-5 text-md focus:outline-none focus:border-yellow-500 transition-all">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1">Ativo de Origem</label>
+                    <div class="relative">
+                        <select id="asset" class="w-full bg-slate-900/50 border border-slate-700 rounded-2xl py-4 px-5 text-lg font-medium focus:outline-none focus:border-yellow-500 transition-all appearance-none">
+                            <option value="USDT-TRC20">Tether (USDT - TRC20)</option>
+                            <option value="USDT-ERC20">Tether (USDT - ERC20)</option>
+                        </select>
+                        <i data-lucide="chevron-down" class="absolute right-5 top-4 text-slate-500 w-5 h-5 pointer-events-none"></i>
+                    </div>
                 </div>
 
-                <button onclick="execute()" id="btn-execute" 
-                    class="w-full bg-white hover:bg-slate-200 text-slate-900 font-black py-4 rounded-2xl transition-all transform active:scale-95 uppercase tracking-tight">
-                    Confirmar e Enviar USDT
+                <button onclick="simulate()" id="btn-simulate" 
+                    class="w-full bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-black py-4 rounded-2xl transition-all transform active:scale-95 uppercase tracking-tight">
+                    Simular Operação
                 </button>
+
+                <!-- Result Area -->
+                <div id="result-area" class="hidden space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div class="bg-slate-900/80 border border-yellow-500/30 rounded-3xl p-6 text-center relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-1 h-full bg-yellow-400"></div>
+                        
+                        <p class="text-[10px] font-bold text-slate-500 uppercase mb-1">Cotação de Mercado</p>
+                        <p id="market-price" class="text-lg font-medium text-slate-300 mb-4">R$ 0,00</p>
+                        
+                        <div class="h-px bg-slate-800 w-full mb-4"></div>
+                        
+                        <p class="text-[10px] font-bold text-yellow-500 uppercase mb-1">Você Receberá Líquido</p>
+                        <p id="final-value" class="text-4xl font-black text-white tracking-tighter">R$ 0,00</p>
+                        <p class="text-[9px] text-slate-500 mt-2 italic">Taxas de serviço e spread já inclusos no valor final</p>
+                    </div>
+
+                    <div class="mt-4">
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1">Chave PIX para Recebimento</label>
+                        <input type="text" id="pix_key" placeholder="Insira sua chave PIX" 
+                            class="w-full bg-slate-900/50 border border-slate-700 rounded-2xl py-4 px-5 text-md focus:outline-none focus:border-yellow-500 transition-all">
+                    </div>
+
+                    <button onclick="execute()" id="btn-execute" 
+                        class="w-full bg-white hover:bg-slate-200 text-slate-900 font-black py-4 rounded-2xl transition-all transform active:scale-95 uppercase tracking-tight">
+                        Confirmar e Enviar USDT
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -108,11 +120,9 @@
 
                 const data = await response.json();
                 
-                // Cálculo da cotação bruta para mostrar ao cliente
-                // Valor Final / (Quantidade * Taxas) = Cotação Base
-                // Mas para simplificar e ser honesto, mostramos o valor final destacado
-                document.getElementById('market-price').innerText = `Cotação Base: R$ ${data.price.toFixed(2)}`;
-                document.getElementById('final-value').innerText = `R$ ${data.result.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                // CORREÇÃO: O main.py retorna 'total_brl', não 'result'
+                document.getElementById('market-price').innerText = `Cotação Base`R$ ${data.price.toFixed(2)}`;
+                document.getElementById('final-value').innerText = `R$ ${data.total_brl.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
                 
                 document.getElementById('result-area').classList.remove('hidden');
             } catch (e) {
