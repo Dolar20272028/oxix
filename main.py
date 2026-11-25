@@ -42,46 +42,58 @@ async def rate_limit_middleware(request: Request, call_next):
     request_history[client_ip].append(now)
     return await call_next(request)
 
-class SimulationRequest(BaseModel):
-    amount: float
-
+# Modelos para as rotas de execução
 class TransactionRequest(BaseModel):
     amount: float
     pix_key: str
 
+# --- CONFIGURAÇÕES DE NEGÓCIO ---
 FALLBACK_PRICE = 5.60
-SPREAD = 1.035 
+PROFIT_MARGIN = 0.065  # 6.5% de lucro real
+MAX_LIMIT = 10000.0    # Trava de 10k USDT
 
 def get_usdt_price():
     try:
+        # CoinGecko é estável, mas pode dar rate limit no Render. 
+        # Se falhar, cai no fallback.
         url = "https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=brl"
         response = requests.get(url, timeout=5)
         data = response.json()
-        return data['tether']['brl']
+        return float(data['tether']['brl'])
     except Exception as e:
         logger.error(f"Erro na cotação: {e}. Usando fallback.")
         return FALLBACK_PRICE
 
-def calculate_tier_fee(amount):
-    if amount >= 50000: return 1.001 
-    if amount >= 10000: return 1.005 
-    if amount >= 1000:  return 1.01  
-    return 1.02 
+# Alterado para GET para bater com o seu Frontend
+@app.get("/api/v1/calc_7x")
+async def simulate(amount: float = 0):
+    if amount <= 0:
+        return JSONResponse(status_code=400, content={"error": "Valor inválido"})
+    
+    if amount > MAX_LIMIT:
+        return JSONResponse(status_code=400, content={"error": f"Limite máximo de {MAX_LIMIT} USDT por operação."})
 
-@app.post("/api/v1/calc_7x")
-async def simulate(req: SimulationRequest):
-    price = get_usdt_price()
-    fee_multiplier = calculate_tier_fee(req.amount)
-    total_brl = (req.amount * price) * fee_multiplier * SPREAD
+    market_price = get_usdt_price()
+    
+    # LÓGICA DE LUCRO: 
+    # Preço de Mercado - 6.5% = Preço que o cliente recebe
+    # Ex: 5.60 - (5.60 * 0.065) = 5.236
+    client_price = market_price * (1 - PROFIT_MARGIN)
+    total_brl = amount * client_price
+
     return {
         "status": "success",
-        "price": price,
-        "total_brl": round(total_brl, 2),
-        "fee_applied": f"{((fee_multiplier-1)*100):.2f}%"
+        "market_price": round(market_price, 2),
+        "client_price": round(client_price, 2),
+        "result": round(total_brl, 2),
+        "margin": "6.5%"
     }
 
 @app.post("/api/v1/exec_9z")
 async def create_transaction(data: TransactionRequest):
+    if data.amount > MAX_LIMIT:
+        raise HTTPException(status_code=400, detail="Valor excede o limite permitido.")
+        
     logger.info(f"NOVO PEDIDO: {data.amount} USDT | PIX: {data.pix_key}")
     return {
         "status": "pending",
