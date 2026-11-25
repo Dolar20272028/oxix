@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import requests
 from collections import defaultdict
+from typing import Optional
 
 # --- CONFIGURAÇÃO DE LOGS ---
 logging.basicConfig(level=logging.INFO)
@@ -54,8 +55,7 @@ MAX_LIMIT = 10000.0    # Trava de 10k USDT
 
 def get_usdt_price():
     try:
-        # CoinGecko é estável, mas pode dar rate limit no Render. 
-        # Se falhar, cai no fallback.
+        # CoinGecko
         url = "https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=brl"
         response = requests.get(url, timeout=5)
         data = response.json()
@@ -64,22 +64,33 @@ def get_usdt_price():
         logger.error(f"Erro na cotação: {e}. Usando fallback.")
         return FALLBACK_PRICE
 
-# Alterado para GET para bater com o seu Frontend
+# ROTA DE STATUS (Para evitar o 404 que vimos nos logs)
+@app.get("/check_status")
+async def check_status():
+    return {
+        "status": "online",
+        "current_price": get_usdt_price(),
+        "timestamp": time.time()
+    }
+
+# ROTA DE CÁLCULO BLINDADA
 @app.get("/api/v1/calc_7x")
-async def simulate(amount: float = 0):
-    if amount <= 0:
+async def simulate(valor: Optional[float] = None, amount: Optional[float] = None):
+    # Aceita tanto ?valor= como ?amount= para não quebrar o frontend
+    final_amount = valor if valor is not None else amount
+
+    if final_amount is None or final_amount <= 0:
         return JSONResponse(status_code=400, content={"error": "Valor inválido"})
     
-    if amount > MAX_LIMIT:
+    if final_amount > MAX_LIMIT:
         return JSONResponse(status_code=400, content={"error": f"Limite máximo de {MAX_LIMIT} USDT por operação."})
 
     market_price = get_usdt_price()
     
     # LÓGICA DE LUCRO: 
     # Preço de Mercado - 6.5% = Preço que o cliente recebe
-    # Ex: 5.60 - (5.60 * 0.065) = 5.236
     client_price = market_price * (1 - PROFIT_MARGIN)
-    total_brl = amount * client_price
+    total_brl = final_amount * client_price
 
     return {
         "status": "success",
