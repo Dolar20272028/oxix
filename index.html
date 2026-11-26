@@ -56,6 +56,13 @@
 </head>
 <body class="text-white">
 
+    <!-- BOTÃO DE SUPORTE FLUTUANTE (Para qualquer erro) -->
+    <a href="https://t.me/CryptoPix_Suporte" target="_blank" 
+       class="fixed bottom-6 right-6 z-50 bg-yellow-500 text-black p-4 rounded-full shadow-2xl hover:scale-110 transition-all active:scale-95 flex items-center justify-center group">
+        <i data-lucide="message-circle" class="w-6 h-6"></i>
+        <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:ml-2 transition-all duration-300 font-bold text-sm whitespace-nowrap">Suporte</span>
+    </a>
+
     <div class="main-container">
         <div class="glass-card w-full max-w-md rounded-3xl p-8">
             
@@ -146,7 +153,9 @@
             
             <div class="text-5xl font-mono font-bold text-yellow-400 mb-8" id="countdown">05:00</div>
             
-            <p class="text-xs text-gray-400 italic">Se o tempo expirar e você não receber, tente simular novamente.</p>
+            <div id="timerFooter" class="space-y-4">
+                <p class="text-xs text-gray-400 italic">Se o tempo expirar e você não receber, tente simular novamente.</p>
+            </div>
         </div>
     </div>
 
@@ -212,7 +221,9 @@
 
         function openPaymentModal() {
             document.getElementById('timerModal').classList.remove('hidden');
-            startTimer(300); // 300 segundos = 5 minutos
+            // Resetar o footer do timer para o estado inicial
+            document.getElementById('timerFooter').innerHTML = '<p class="text-xs text-gray-400 italic">Se o tempo expirar e você não receber, tente simular novamente.</p>';
+            startTimer(300); 
             lucide.createIcons();
         }
 
@@ -232,8 +243,19 @@
 
                 if (--timer < 0) {
                     clearInterval(timerInterval);
-                    alert("O tempo de confirmação expirou. Por favor, tente simular novamente.");
-                    document.getElementById('timerModal').classList.add('hidden');
+                    
+                    // ALTERAÇÃO AQUI: Em vez de alert, mostra botão de suporte
+                    document.getElementById('timerFooter').innerHTML = `
+                        <div class="mt-4 p-4 bg-red-500/20 border border-red-500/50 rounded-2xl">
+                            <p class="text-sm text-red-400 mb-4 font-medium">O tempo expirou e o depósito não foi confirmado.</p>
+                            <a href="https://t.me/CryptoPix_Suporte" target="_blank" 
+                               class="w-full bg-yellow-500 text-black font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-yellow-400 transition-all">
+                                <i data-lucide="message-circle" class="w-5 h-5"></i>
+                                Falar com Suporte
+                            </a>
+                        </div>
+                    `;
+                    lucide.createIcons();
                 }
             }, 1000);
         }
