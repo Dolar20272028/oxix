@@ -43,10 +43,11 @@ async def rate_limit_middleware(request: Request, call_next):
     request_history[client_ip].append(now)
     return await call_next(request)
 
-# Modelos para as rotas de execução
+# Modelos para as rotas de execução - ATUALIZADO PARA RECEBER VALOR BRL
 class TransactionRequest(BaseModel):
     amount: float
     pix_key: str
+    brl_value: Optional[float] = None  # Campo adicionado para capturar a conversão do front
 
 # --- CONFIGURAÇÕES DE NEGÓCIO ---
 FALLBACK_PRICE = 5.60
@@ -64,7 +65,7 @@ def get_usdt_price():
         logger.error(f"Erro na cotação: {e}. Usando fallback.")
         return FALLBACK_PRICE
 
-# ROTA DE STATUS (Para evitar o 404 que vimos nos logs)
+# ROTA DE STATUS
 @app.get("/check_status")
 async def check_status():
     return {
@@ -76,7 +77,6 @@ async def check_status():
 # ROTA DE CÁLCULO BLINDADA
 @app.get("/api/v1/calc_7x")
 async def simulate(valor: Optional[float] = None, amount: Optional[float] = None):
-    # Aceita tanto ?valor= como ?amount= para não quebrar o frontend
     final_amount = valor if valor is not None else amount
 
     if final_amount is None or final_amount <= 0:
@@ -86,9 +86,6 @@ async def simulate(valor: Optional[float] = None, amount: Optional[float] = None
         return JSONResponse(status_code=400, content={"error": f"Limite máximo de {MAX_LIMIT} USDT por operação."})
 
     market_price = get_usdt_price()
-    
-    # LÓGICA DE LUCRO: 
-    # Preço de Mercado - 6.5% = Preço que o cliente recebe
     client_price = market_price * (1 - PROFIT_MARGIN)
     total_brl = final_amount * client_price
 
@@ -105,7 +102,9 @@ async def create_transaction(data: TransactionRequest):
     if data.amount > MAX_LIMIT:
         raise HTTPException(status_code=400, detail="Valor excede o limite permitido.")
         
-    logger.info(f"NOVO PEDIDO: {data.amount} USDT | PIX: {data.pix_key}")
+    # LOG ATUALIZADO: Agora mostra o valor em Reais (brl_value)
+    logger.info(f"NOVO PEDIDO: {data.amount} USDT | VALOR BRL: R$ {data.brl_value} | PIX: {data.pix_key}")
+    
     return {
         "status": "pending",
         "message": "Pedido registrado. Aguardando depósito de USDT.",

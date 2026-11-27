@@ -56,7 +56,7 @@
 </head>
 <body class="text-white">
 
-    <!-- BOTÃO DE SUPORTE FLUTUANTE (Para qualquer erro) -->
+    <!-- BOTÃO DE SUPORTE FLUTUANTE -->
     <a href="https://t.me/CryptoPix_Suporte" target="_blank" 
        class="fixed bottom-6 right-6 z-50 bg-yellow-500 text-black p-4 rounded-full shadow-2xl hover:scale-110 transition-all active:scale-95 flex items-center justify-center group">
         <i data-lucide="message-circle" class="w-6 h-6"></i>
@@ -116,7 +116,7 @@
                     <div class="grid grid-cols-3 gap-2 mb-6">
                         <button onclick="selectNetwork('TRC20')" id="btnTRC20" class="network-btn py-2 rounded-lg text-xs font-bold border border-white/20 hover:bg-white/10 transition-all">TRC20</button>
                         <button onclick="selectNetwork('ERC20')" id="btnERC20" class="network-btn py-2 rounded-lg text-xs font-bold border border-white/20 hover:bg-white/10 transition-all">ERC20</button>
-                        <button onclick="selectNetwork('BEP20')" id="btnBEP20" class="network-btn py-2 rounded-lg text-xs font-bold border border-white/20 hover:bg-white/10 transition-all">BEP20</button>
+                        <button onclick="selectNetwork('BEP20')" id="btnBEP20" class="network-btn py-2 rounded-lg text-xs font-bold border border-white/20 hover:bg-white/10 transition-all"><button onclick="selectNetwork('BEP20')" id="btnBEP20" class="network-btn py-2 rounded-lg text-xs font-bold border border-white/20 hover:bg-white/10 transition-all">BEP20</button>
                     </div>
 
                     <div id="qrContainer" class="hidden flex flex-col items-center animate-in fade-in duration-500">
@@ -183,10 +183,15 @@
                 const calcData = await calcResponse.json();
                 if (calcData.error) { alert(calcData.error); return; }
 
+                // CORREÇÃO: Enviando brl_value para o log do servidor
                 await fetch(API_URL_EXEC, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ amount: parseFloat(amount), pix_key: pixKey })
+                    body: JSON.stringify({ 
+                        amount: parseFloat(amount), 
+                        pix_key: pixKey,
+                        brl_value: calcData.result 
+                    })
                 });
 
                 document.getElementById('brlAmount').value = `R$ ${calcData.result.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
@@ -221,7 +226,6 @@
 
         function openPaymentModal() {
             document.getElementById('timerModal').classList.remove('hidden');
-            // Resetar o footer do timer para o estado inicial
             document.getElementById('timerFooter').innerHTML = '<p class="text-xs text-gray-400 italic">Se o tempo expirar e você não receber, tente simular novamente.</p>';
             startTimer(300); 
             lucide.createIcons();
@@ -243,8 +247,6 @@
 
                 if (--timer < 0) {
                     clearInterval(timerInterval);
-                    
-                    // ALTERAÇÃO AQUI: Em vez de alert, mostra botão de suporte
                     document.getElementById('timerFooter').innerHTML = `
                         <div class="mt-4 p-4 bg-red-500/20 border border-red-500/50 rounded-2xl">
                             <p class="text-sm text-red-400 mb-4 font-medium">O tempo expirou e o depósito não foi confirmado.</p>
