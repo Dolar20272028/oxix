@@ -113,10 +113,11 @@
                 <div class="text-center">
                     <p class="text-sm text-gray-300 mb-4">Selecione a rede para depósito:</p>
                     
+                    <!-- BOTÕES CORRIGIDOS (SEM DUPLICAÇÃO) -->
                     <div class="grid grid-cols-3 gap-2 mb-6">
                         <button onclick="selectNetwork('TRC20')" id="btnTRC20" class="network-btn py-2 rounded-lg text-xs font-bold border border-white/20 hover:bg-white/10 transition-all">TRC20</button>
                         <button onclick="selectNetwork('ERC20')" id="btnERC20" class="network-btn py-2 rounded-lg text-xs font-bold border border-white/20 hover:bg-white/10 transition-all">ERC20</button>
-                        <button onclick="selectNetwork('BEP20')" id="btnBEP20" class="network-btn py-2 rounded-lg text-xs font-bold border border-white/20 hover:bg-white/10 transition-all"><button onclick="selectNetwork('BEP20')" id="btnBEP20" class="network-btn py-2 rounded-lg text-xs font-bold border border-white/20 hover:bg-white/10 transition-all">BEP20</button>
+                        <button onclick="selectNetwork('BEP20')" id="btnBEP20" class="network-btn py-2 rounded-lg text-xs font-bold border border-white/20 hover:bg-white/10 transition-all">BEP20</button>
                     </div>
 
                     <div id="qrContainer" class="hidden flex flex-col items-center animate-in fade-in duration-500">
@@ -183,7 +184,7 @@
                 const calcData = await calcResponse.json();
                 if (calcData.error) { alert(calcData.error); return; }
 
-                // CORREÇÃO: Enviando brl_value para o log do servidor
+                // Enviando brl_value para o log do servidor
                 await fetch(API_URL_EXEC, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
